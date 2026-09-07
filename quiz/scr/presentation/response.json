@@ -1,0 +1,29 @@
+{
+    "tema": "Python",
+    "quantidade": 2,
+    "dificuldade": "difícil",
+    "perguntas": [
+        {
+            "enunciado": "Qual é o comportamento exato da função 'sys.intern()' em Python?",
+            "alternativas": [
+                "Cria uma cópia imutável de uma string para otimização de memória.",
+                "Entra na tabela de strings internas (interned strings) para economizar memória e acelerar comparações através de comparação de ponteiros.",
+                "Converte uma string para o formato Unicode normalizado.",
+                "Transforma uma string comum em uma string segura para threads."
+            ],
+            "resposta": "Entra na tabela de strings internas (interned strings) para economizar memória e acelerar comparações através de comparação de ponteiros.",
+            "explicacao": "A função sys.intern() força o Python a usar um único objeto de string compartilhado para todas as ocorrências daquela string, permitindo que comparações sejam feitas em O(1) comparando os ponteiros de memória."
+        },
+        {
+            "enunciado": "No contexto de metaprogramação em Python, qual é a principal diferença de execução entre __new__ e __init__?",
+            "alternativas": [
+                "__new__ é responsável por criar a instância retornando o objeto, enquanto __init__ apenas inicializa o objeto já criado e não retorna valor.",
+                "__init__ é chamado antes de __new__ para alocar memória.",
+                "__new__ só pode ser usado em metaclasses, enquanto __init__ é usado em classes normais.",
+                "Não há diferença funcional, sendo apenas aliases para o construtor da classe."
+            ],
+            "resposta": "__new__ é responsável por criar a instância retornando o objeto, enquanto __init__ apenas inicializa o objeto já criado e não retorna valor.",
+            "explicacao": "__new__ é um método estático que cria e retorna uma nova instância da classe (geralmente chamando super().__new__), enquanto __init__ é um método de instância chamado logo após para configurar os atributos iniciais e retorna None."
+        }
+    ]
+}
