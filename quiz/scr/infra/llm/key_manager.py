@@ -1,12 +1,10 @@
 from os import getenv
-
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
-
 class GeminiKeyManager:
-
     def __init__(self):
         self.switched = False
 

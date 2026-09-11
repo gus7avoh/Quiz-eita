@@ -28,6 +28,8 @@ class GeminiClient:
                     if self.key_manager.switched:
                         raise Exception("Todas as API Keys foram utilizadas")
                     self.key_manager.next_key()
+                    return self.invoke(prompt)
+                raise
 
         raise Exception("Internal Server Error", 500)
 

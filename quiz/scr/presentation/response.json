@@ -4,26 +4,26 @@
     "dificuldade": "difícil",
     "perguntas": [
         {
-            "enunciado": "Qual é o comportamento do operador '==' em comparação com o operador 'is' em Python?",
+            "enunciado": "Qual é o principal objetivo do uso do protocolo descriptor em Python e como ele se manifesta em recursos nativos da linguagem?",
             "alternativas": [
-                "'==' compara valores, enquanto 'is' compara identidades de objetos na memória.",
-                "'==' compara identidades de objetos, enquanto 'is' compara valores.",
-                "Ambos comparam valores, mas 'is' é utilizado apenas para tipos primitivos.",
-                "Não há diferença prática entre eles na maioria das versões modernas do Python."
+                "Controlar o acesso a atributos de classes por meio de métodos de gancho específicos.",
+                "Otimizar a alocação de memória para instâncias usando slots estáticos predefinidos.",
+                "Garantir a imutabilidade de dados globais compartilhados entre threads distintas.",
+                "Serializar objetos complexos para transmissão eficiente em redes TCP."
             ],
-            "resposta": "'==' compara valores, enquanto 'is' compara identidades de objetos na memória.",
-            "explicacao": "O operador '==' verifica se os valores de dois objetos são iguais, chamando o método especial __eq__. Já o operador 'is' verifica se duas variáveis apontam exatamente para o mesmo objeto na memória (identidade), comparando seus endereços de memória."
+            "resposta": "Controlar o acesso a atributos de classes por meio de métodos de gancho específicos.",
+            "explicacao": "Descriptors implementam os métodos __get__, __set__ ou __delete__, permitindo customizar o comportamento quando um atributo é acessado, alterado ou deletado. É o mecanismo por trás de propriedades (@property), métodos estáticos e de classe."
         },
         {
-            "enunciado": "O que são geradores (generators) em Python e qual palavra-chave é utilizada para criá-los?",
+            "enunciado": "Como o interpretador CPython lida internamente com a resolução de nomes em escopos aninhados quando a palavra-chave nonlocal é utilizada?",
             "alternativas": [
-                "Funções que retornam listas completas de uma vez, utilizando a palavra-chave 'generate'.",
-                "Iteradores especiais que produzem valores sob demanda usando a palavra-chave 'yield'.",
-                "Classes abstratas para gerenciar concorrência, utilizando a palavra-chave 'async'.",
-                "Módulos nativos para compilar código C em tempo de execução usando a palavra-chave 'macro'."
+                "Ela força a busca direta no escopo global, ignorando os escopos locais intermediários.",
+                "Ela vincula um identificador ao escopo de uma função envolvente que não seja a global.",
+                "Ela cria uma cópia local da variável para evitar efeitos colaterais na função externa.",
+                "Ela bloqueia o acesso concorrente à variável durante a execução assíncrona."
             ],
-            "resposta": "Iteradores especiais que produzem valores sob demanda usando a palavra-chave 'yield'.",
-            "explicacao": "Geradores são uma forma simples e poderosa de criar iteradores. Eles utilizam a palavra-chave 'yield' para retornar um valor e pausar a execução da função, retomando de onde parou na próxima chamada, o que economiza muita memória ao lidar com grandes fluxos de dados."
+            "resposta": "Ela vincula um identificador ao escopo de uma função envolvente que não seja a global.",
+            "explicacao": "A palavra-chave nonlocal faz com que variáveis pertençam a uma função externa (enclosing scope), permitindo sua modificação sem subir até o escopo global do módulo."
         }
     ]
 }
