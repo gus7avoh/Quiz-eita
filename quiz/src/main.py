@@ -5,9 +5,9 @@ import os
 
 def main():
     result = graph.invoke({
-        "tema": "Python",
-        "quantidade": 2,
-        "dificuldade": "difícil",
+        "tema": "preatorios",
+        "quantidade": 4,
+        "dificuldade": "impossivel",
         "perguntas": [],
     })
 
@@ -20,7 +20,7 @@ def main():
     }
 
     arquivo = os.path.join(
-        "D:\\cod\\eita\\quiz\\scr\\presentation\\response.json"
+        "C:\\cod\\Quiz-eita\\quiz\\src\\presentation\\response.json"
     )
 
     with open(arquivo, "w", encoding="utf-8") as f:

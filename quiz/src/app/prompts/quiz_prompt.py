@@ -64,6 +64,16 @@ def quiz_prompt(state: dict):
     poderiam conhecer.
     - Evite perguntas que dependam de conhecimento profissional altamente
     especializado, a menos que isso seja explicitamente solicitado.
+    
+    
+    INPOSSIVEL
+    - Deve exigir conhecimento muito especializado ou um conhecimento
+    profissional altamente especializado.
+    - Pode exigir comparação, associação, sequência de raciocínios logicos complexos
+    - Pode utilizar questoes de epocas diferentes do mesmo assunto desde que essas estajem no contexto de uma unica pergunta,
+    a pergunta deve ter o mesmo contexto temporal
+    - Pode utilizar informacoes que nao sao conhecidas por uma pessoa comum
+    
 
     MISTA:
     - Deve combinar perguntas fáceis, médias e difíceis.
