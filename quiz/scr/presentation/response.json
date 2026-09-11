@@ -4,26 +4,26 @@
     "dificuldade": "difícil",
     "perguntas": [
         {
-            "enunciado": "Qual é o comportamento exato da função 'sys.intern()' em Python?",
+            "enunciado": "Qual é o comportamento do operador '==' em comparação com o operador 'is' em Python?",
             "alternativas": [
-                "Cria uma cópia imutável de uma string para otimização de memória.",
-                "Entra na tabela de strings internas (interned strings) para economizar memória e acelerar comparações através de comparação de ponteiros.",
-                "Converte uma string para o formato Unicode normalizado.",
-                "Transforma uma string comum em uma string segura para threads."
+                "'==' compara valores, enquanto 'is' compara identidades de objetos na memória.",
+                "'==' compara identidades de objetos, enquanto 'is' compara valores.",
+                "Ambos comparam valores, mas 'is' é utilizado apenas para tipos primitivos.",
+                "Não há diferença prática entre eles na maioria das versões modernas do Python."
             ],
-            "resposta": "Entra na tabela de strings internas (interned strings) para economizar memória e acelerar comparações através de comparação de ponteiros.",
-            "explicacao": "A função sys.intern() força o Python a usar um único objeto de string compartilhado para todas as ocorrências daquela string, permitindo que comparações sejam feitas em O(1) comparando os ponteiros de memória."
+            "resposta": "'==' compara valores, enquanto 'is' compara identidades de objetos na memória.",
+            "explicacao": "O operador '==' verifica se os valores de dois objetos são iguais, chamando o método especial __eq__. Já o operador 'is' verifica se duas variáveis apontam exatamente para o mesmo objeto na memória (identidade), comparando seus endereços de memória."
         },
         {
-            "enunciado": "No contexto de metaprogramação em Python, qual é a principal diferença de execução entre __new__ e __init__?",
+            "enunciado": "O que são geradores (generators) em Python e qual palavra-chave é utilizada para criá-los?",
             "alternativas": [
-                "__new__ é responsável por criar a instância retornando o objeto, enquanto __init__ apenas inicializa o objeto já criado e não retorna valor.",
-                "__init__ é chamado antes de __new__ para alocar memória.",
-                "__new__ só pode ser usado em metaclasses, enquanto __init__ é usado em classes normais.",
-                "Não há diferença funcional, sendo apenas aliases para o construtor da classe."
+                "Funções que retornam listas completas de uma vez, utilizando a palavra-chave 'generate'.",
+                "Iteradores especiais que produzem valores sob demanda usando a palavra-chave 'yield'.",
+                "Classes abstratas para gerenciar concorrência, utilizando a palavra-chave 'async'.",
+                "Módulos nativos para compilar código C em tempo de execução usando a palavra-chave 'macro'."
             ],
-            "resposta": "__new__ é responsável por criar a instância retornando o objeto, enquanto __init__ apenas inicializa o objeto já criado e não retorna valor.",
-            "explicacao": "__new__ é um método estático que cria e retorna uma nova instância da classe (geralmente chamando super().__new__), enquanto __init__ é um método de instância chamado logo após para configurar os atributos iniciais e retorna None."
+            "resposta": "Iteradores especiais que produzem valores sob demanda usando a palavra-chave 'yield'.",
+            "explicacao": "Geradores são uma forma simples e poderosa de criar iteradores. Eles utilizam a palavra-chave 'yield' para retornar um valor e pausar a execução da função, retomando de onde parou na próxima chamada, o que economiza muita memória ao lidar com grandes fluxos de dados."
         }
     ]
 }

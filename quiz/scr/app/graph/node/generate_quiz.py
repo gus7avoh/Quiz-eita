@@ -1,13 +1,12 @@
 from langchain_core.messages import HumanMessage
-
 from app.graph.state import QuizState
 from domain.entities.quiz import Quiz
-from infra.llm.gemini import create_llm
+from infra.llm.geminiClient import GeminiClient
 
 
-llm = create_llm()
-structured_llm = llm.with_structured_output(Quiz)
-
+gemini_client = GeminiClient(
+    structured_output=Quiz
+)
 
 def generate_quiz(state: QuizState):
 
@@ -28,7 +27,7 @@ def generate_quiz(state: QuizState):
 
     print("Enviando para o Gemini...")
 
-    response = structured_llm.invoke([
+    response = gemini_client.invoke([
         HumanMessage(content=prompt)
     ])
 

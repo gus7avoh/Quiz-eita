@@ -1,7 +1,7 @@
 from app.graph.graph import graph
+
 import json
 import os
-
 
 def main():
     result = graph.invoke({
