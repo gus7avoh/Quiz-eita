@@ -1,36 +1,78 @@
-from app.graph.graph import graph
+# from app.graph.graph import graph
+# import asyncio
 
-import json
-import os
+# import json
+# import os
 
-def main():
-    result = graph.invoke({
-        "tema": "preatorios",
-        "quantidade": 4,
-        "dificuldade": "impossivel",
-        "perguntas": [],
-    })
+# from infra.repository.redis_client import RedisClient
 
-    dados = {
-        **result,
-        "perguntas": [
-            pergunta.model_dump()
-            for pergunta in result["perguntas"]
-        ]
-    }
+# def main():
+#     # result = graph.invoke({
+#     #     "tema": "Paraiso perdido",
+#     #     "quantidade": 4,
+#     #     "dificuldade": "mista",
+#     #     "perguntas": [],
+#     # })
 
-    arquivo = os.path.join(
-        "C:\\cod\\Quiz-eita\\quiz\\src\\presentation\\response.json"
-    )
+#     # dados = {
+#     #     **result,
+#     #     "perguntas": [
+#     #         pergunta.model_dump()
+#     #         for pergunta in result["perguntas"]
+#     #     ]
+#     # }
 
-    with open(arquivo, "w", encoding="utf-8") as f:
-        json.dump(
-            dados,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
+#     # arquivo = os.path.join(
+#     #     # "C:\\cod\\Quiz-eita\\quiz\\src\\presentation\\response.json"
+#     #     "D:\\cod\\eita\\quiz\\src\\presentation\\response.json"
+#     # )
+
+#     # with open(arquivo, "w", encoding="utf-8") as f:
+#     #     json.dump(
+#     #         dados,
+#     #         f,
+#     #         ensure_ascii=False,
+#     #         indent=4
+#     #     )
 
 
-if __name__ == "__main__":
-    main()
+        
+#     redis_client = RedisClient()
+#     conn = redis_client.get_connection()
+
+#     async def test_redis():
+#         print(await conn.ping())
+
+
+#     asyncio.run(test_redis())
+
+
+# if __name__ == "__main__":
+#     main()
+
+
+
+
+import asyncio
+
+from infra.repository.redis_client import RedisClient
+from infra.repository.quiz_repository import QuizRepository
+
+
+async def main():
+    redis_client = RedisClient()
+    repository = QuizRepository(redis_client)
+
+    # await repository.save("quiz:test", "processing")
+
+    # result = await repository.get("quiz:test")
+
+    # print(result)
+
+    # await repository.delete("quiz:test")
+
+
+asyncio.run(main())
+
+
+

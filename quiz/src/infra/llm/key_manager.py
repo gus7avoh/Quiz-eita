@@ -10,14 +10,14 @@ class GeminiKeyManager:
 
         self.keys = [
             getenv("EITA_1"),
-            # getenv("EITA_2"),
-            # getenv("EITA_4"),
-            # getenv("EITA_5"),
-            # getenv("EITA_6"),
-            # getenv("EITA_7"),
-            # getenv("EITA_8"),
-            # getenv("EITA_9"),
-            # getenv("EITA_10"),
+            getenv("EITA_2"),
+            getenv("EITA_4"),
+            getenv("EITA_5"),
+            getenv("EITA_6"),
+            getenv("EITA_7"),
+            getenv("EITA_8"),
+            getenv("EITA_9"),
+            getenv("EITA_10"),
         ]
 
         self.keys = [key for key in self.keys if key]

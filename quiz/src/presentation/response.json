@@ -1,51 +1,51 @@
 {
-    "tema": "preatorios",
+    "tema": "Paraiso perdido",
     "quantidade": 4,
-    "dificuldade": "impossivel",
+    "dificuldade": "mista",
     "perguntas": [
         {
-            "enunciado": "No contexto da Emenda Constitucional nº 114/2021, qual foi o impacto exato na sistemática de expedição de precatórios decorrentes de decisões judiciais transitadas em julgado contra a Fazenda Pública Federal, considerando a nova redação conferida ao teto global para pagamento?",
+            "enunciado": "Quem é o autor do famoso poema épico 'Paraíso Perdido'?",
             "alternativas": [
-                "Fixou o limite percentual vinculado à Receita Corrente Líquida para o exercício subsequente.",
-                "Vinculou o montante global à variação acumulada do IPCA acrescida de juros moratórios legais.",
-                "Subordinou a emissão ao fluxo de caixa projetado pelo Tesouro Nacional para o quadrimestre.",
-                "Condicionou a expedição anual ao superávit primário apurado na Lei de Diretrizes Orçamentárias."
+                "John Milton",
+                "William Shakespeare",
+                "Geoffrey Chaucer",
+                "Christopher Marlowe"
             ],
-            "resposta": "Fixou o limite percentual vinculado à Receita Corrente Líquida para o exercício subsequente.",
-            "explicacao": "A EC 114/2021 introduziu um limite para o pagamento de precatórios com base em um percentual da Receita Corrente Líquida federal, alterando drasticamente a forma de cálculo e previsibilidade fiscal."
+            "resposta": "John Milton",
+            "explicacao": "John Milton publicou o poema épico 'Paraíso Perdido' em versos brancos em 1667, sendo esta sua obra mais célebre."
         },
         {
-            "enunciado": "Segundo a jurisprudência vinculante do Supremo Tribunal Federal sobre a modulação de efeitos no julgamento das ADIs 4357 e 4425, qual é a base de cálculo aplicável para a correção monetária dos precatórios no período compreendido entre a inscrição e o efetivo pagamento?",
+            "enunciado": "Qual é o principal evento bíblico narrado na primeira metade do poema 'Paraíso Perdido'?",
             "alternativas": [
-                "Taxa Referencial somada ao índice oficial de inflação ampla acumulada do período.",
-                "IPCA-E acrescido dos juros moratórios aplicados às cadernetas de poupança.",
-                "Índice de Preços ao Consumidor Amplo Especial sem incidência de juros compostos.",
-                "Varredura ponderada entre a TR e a variação cambial para débitos de natureza tributária."
+                "A queda dos anjos rebeldes",
+                "O dilúvio universal",
+                "A construção da arca de Noé",
+                "A destruição de Sodoma"
             ],
-            "resposta": "IPCA-E acrescido dos juros moratórios aplicados às cadernetas de poupança.",
-            "explicacao": "O STF modulou os efeitos das ADIs determinando a aplicação do IPCA-E para a correção monetária e os juros da caderneta de poupança para a fase posterior à inscrição do precatório."
+            "resposta": "A queda dos anjos rebeldes",
+            "explicacao": "A primeira metade do poema foca extensamente na guerra no céu, na derrota de Satanás e na sua queda junto com os anjos rebeldes para o inferno."
         },
         {
-            "enunciado": "Diante do regramento constitucional sobre a cessão de créditos de precatórios estabelecida pelo artigo 100 da CF/88, assinale a alternativa que descreve corretamente os requisitos para que a eficácia perante a entidade devedora produza plenos efeitos jurídicos.",
+            "enunciado": "Na obra de Milton, qual figura celestre é enviada para advertir Adão sobre o perigo da desobediência?",
             "alternativas": [
-                "Comunicação protocolizada por petição conjunta no processo de origem com firma reconhecida.",
-                "Notificação formal por meio de instrumento público registrado no cartório de títulos e documentos.",
-                "Simples protocolo administrativo acompanhado do termo de cessão com assinatura digital válida.",
-                "Averbação obrigatória no juízo da execução mediante petição instruída com escritura pública."
+                "O arcanjo Rafael",
+                "O arcanjo Gabriel",
+                "O arcanjo Miguel",
+                "O arcanjo Uriel"
             ],
-            "resposta": "Simples protocolo administrativo acompanhado do termo de cessão com assinatura digital válida.",
-            "explicacao": "A jurisprudência consolidou o entendimento de que a eficácia da cessão de precatório perante a entidade devedora depende apenas da comunicação protocolizada no processo de execução."
+            "resposta": "O arcanjo Rafael",
+            "explicacao": "Rafael é enviado por Deus para conversar com Adão, relatar a história da guerra no céu e preveni-lo contra as maquinações de Satanás."
         },
         {
-            "enunciado": "No tocante ao regime especial de pagamento de precatórios instituído pela Emenda Constitucional nº 99/2017 para os estados e municípios em mora, qual penalidade específica era imposta ao ente federado caso houvesse inadimplemento parcial do depósito mensal?",
+            "enunciado": "De acordo com a estrutura narrativa de 'Paraíso Perdido', em quantos livros a obra foi originalmente dividida em sua segunda edição de 1674?",
             "alternativas": [
-                "Sequestro imediato de verbas públicas pelo Presidente do Tribunal de Justiça local.",
-                "Bloqueio automático das transferências voluntárias e do Fundo de Participação respectivo.",
-                "Intervenção federal decretada de ofício pelo Supremo Tribunal Federal mediante avocação.",
-                "Suspensão temporária da emissão de novas certidões de regularidade fiscal e previdenciária."
+                "Doze livros",
+                "Dez livros",
+                "Quatorze livros",
+                "Oito livros"
             ],
-            "resposta": "Bloqueio automático das transferências voluntárias e do Fundo de Participação respectivo.",
-            "explicacao": "O descumprimento do regime especial de pagamento de precatórios, conforme a EC 99/2017, ensejava o sequestro de valores e o bloqueio de repasses como o FPM e o FPE."
+            "resposta": "Doze livros",
+            "explicacao": "Embora a primeira edição de 1667 tivesse dez livros, a edição de 1674 foi reorganizada em doze livros, mimetizando a estrutura clássica da Eneida de Virgílio."
         }
     ]
 }

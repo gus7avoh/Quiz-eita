@@ -14,10 +14,8 @@ PROMPTS_TEMAS = {
     "filmes": filmes_prompt,
     "jogos": jogos_prompt,
     "músicas": musicas_prompt,
-    "musicas": musicas_prompt,
     "famosos": famosos_prompt,
 }
-
 
 gemini_client = GeminiClient(
     structured_output=Quiz
