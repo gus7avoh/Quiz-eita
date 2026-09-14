@@ -12,15 +12,17 @@ class QuizDTO:
         return alternatives
 
     def get_question(self):
-        return [
-            {
-                "enunciado": question.enunciado,
-                "alternativas": self.sort_alternatives(
-                    question.alternativas.copy()
-                )
-            }
-            for question in self.quiz.perguntas
-        ]
+        return {
+            "perguntas": [
+                {
+                    "enunciado": question.enunciado,
+                    "alternativas": self.sort_alternatives(
+                        question.alternativas.copy()
+                    )
+                }
+                for question in self.quiz.perguntas
+            ]
+        }
 
     def is_correct_answer(
         self,

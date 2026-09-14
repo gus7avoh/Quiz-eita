@@ -26,6 +26,10 @@ class QuizRepository:
     async def get_quiz(self, quiz_id: str):
         result = await self.redis.get(f"quiz:{quiz_id}")
 
+
+        print("DATA repo:", result)
+        print("TYPE repo:", type(result))
+
         if result is None:
             return None
 

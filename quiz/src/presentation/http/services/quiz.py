@@ -10,19 +10,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+redis_client = RedisClient()
+repository = QuizRepository(redis_client)
+
 
 async def create_quiz(tema: str, quantidade: int, dificuldade: str):
     uuid = generate_quiz_uuid()
     try:
         logger.info("Criando quiz uuid=%s tema=%r quantidade=%s dificuldade=%r", uuid, tema, quantidade, dificuldade)
-        redis_client = RedisClient()
-        repository = QuizRepository(redis_client)
         await repository.create(uuid)
         
         asyncio.create_task(
             process_quiz(
                 uuid,
-                repository,
                 tema,
                 quantidade,
                 dificuldade,
@@ -38,7 +38,6 @@ async def create_quiz(tema: str, quantidade: int, dificuldade: str):
     
 async def process_quiz(
     uuid: str,
-    repository: QuizRepository,
     tema: str,
     quantidade: int,
     dificuldade: str,
@@ -68,8 +67,24 @@ async def process_quiz(
         await repository.fail(uuid, str(e))
     
 
-async def get_quiz():
-    pass
+async def get_quiz(
+        quiz_uuid: str,
+    ):
+    try:
+        if (await status_check(quiz_uuid) != "completed"):
+            return None
+        
+        logger.info("Coletando quiz uuid=%s", quiz_uuid)
+        data = await repository.get_quiz(quiz_uuid)
+
+        quiz = Quiz(**data["quiz"])
+        quiz_dto = QuizDTO(quiz)
+
+        return quiz_dto.get_question()
+
+    except Exception as e:
+        logger.exception("Falha ao processar quiz uuid=%s", quiz_uuid)
+        await repository.fail(quiz_uuid, str(e))
 
 
 async def delete_quiz():
@@ -78,3 +93,16 @@ async def delete_quiz():
 
 async def answer_quiz():
     pass
+
+
+async def status_check(quiz_uuid: str): 
+    logger.info("Checando status do quiz uuid=%s", quiz_uuid)
+
+    data = await repository.get_quiz(quiz_uuid)
+
+    status = data["status"]
+
+    if status in ("completed", "failed"):
+        return status
+
+    return "processing"
