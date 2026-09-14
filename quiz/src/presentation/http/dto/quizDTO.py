@@ -1,4 +1,4 @@
-from src.domain.entities.quiz import Quiz
+from domain.entities.quiz import Quiz
 import random
 
 
