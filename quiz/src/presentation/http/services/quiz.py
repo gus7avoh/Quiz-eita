@@ -87,9 +87,15 @@ async def get_quiz(
         await repository.fail(quiz_uuid, str(e))
 
 
-async def delete_quiz():
-    pass
+async def delete_quiz(list_uuid: list[str]):
+    try:
+        for uuid in list_uuid:
+            await repository.delete(uuid)
 
+        return {"excluded" : True}
+    except Exception as e:
+        logger.exception("Falha ao processar quiz uuid=%s", uuid)
+        await repository.fail(uuid, str(e))
 
 async def answer_quiz(
         quiz_uuid: str,
