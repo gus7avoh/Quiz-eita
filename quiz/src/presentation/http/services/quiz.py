@@ -91,8 +91,26 @@ async def delete_quiz():
     pass
 
 
-async def answer_quiz():
-    pass
+async def answer_quiz(
+        quiz_uuid: str,
+        enunciado: str,
+        resposta: str
+    ):
+    try :
+        if (await status_check(quiz_uuid) != "completed"):
+            return None
+        
+        logger.info("Coletando quiz uuid=%s", quiz_uuid)
+        data = await repository.get_quiz(quiz_uuid)
+
+        quiz = Quiz(**data["quiz"])
+        quiz_dto = QuizDTO(quiz)
+
+        return quiz_dto.get_answer(enunciado, resposta)
+
+    except Exception as e:
+        logger.exception("Falha ao processar quiz uuid=%s", quiz_uuid)
+        await repository.fail(quiz_uuid, str(e))
 
 
 async def status_check(quiz_uuid: str): 

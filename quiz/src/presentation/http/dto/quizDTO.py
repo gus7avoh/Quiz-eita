@@ -37,15 +37,16 @@ class QuizDTO:
         resposta_usuario: str
     ):
         for question in self.quiz.perguntas:
-
             if question.enunciado == enunciado:
                 return {
-                    "resposta": question.resposta,
-                    "correta": self.is_correct_answer(
-                        question,
-                        resposta_usuario
-                    ),
-                    "explicacao": question.explicacao
+                    "resposta": {
+                        "resposta": question.resposta,
+                        "correta": self.is_correct_answer(
+                            question,
+                            resposta_usuario
+                        ),
+                        "explicacao": question.explicacao
+                    }
                 }
-
+            
         return None

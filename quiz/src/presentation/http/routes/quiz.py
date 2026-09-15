@@ -3,10 +3,13 @@ from presentation.http.schemas.quiz import (
     QuizCreatedResponse,
     QuizRequest,
     QuizQuestionsResponse,
-    QuizQuestionsRequest
+    QuizQuestionsRequest,
+    QuizAnswerResponse,
+    QuizAnswerRequest
 )
 from presentation.http.services.quiz import create_quiz as create_quiz_service
 from presentation.http.services.quiz import get_quiz as get_quiz_service
+from presentation.http.services.quiz import answer_quiz as answer_quiz_service
 
 router = APIRouter(
     prefix="/quiz",
@@ -27,3 +30,12 @@ async def create_quiz(data: QuizRequest) -> QuizCreatedResponse:
 @router.post("/question", response_model=QuizQuestionsResponse|None)
 async def get_quiz(data: QuizQuestionsRequest) -> QuizQuestionsResponse|None:
     return await get_quiz_service(quiz_uuid=data.uuid)
+
+
+@router.post("/answer", response_model=QuizAnswerResponse|None)
+async def answer_quiz(data: QuizAnswerRequest) -> QuizAnswerResponse|None:
+    return await answer_quiz_service(
+        quiz_uuid=data.uuid,
+        enunciado=data.enunciado,
+        resposta=data.resposta_usuario
+    )
