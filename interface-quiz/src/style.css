@@ -1,0 +1,20 @@
+html,
+body,
+#app {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--background-color);
+}
+
+:root {
+    --primary-color: #aa3bff;
+    --background-color: rgb(31, 31, 31);
+    --title-size: 70px;
+    --subtitle-size: 20px;
+}
+
+body {
+    overflow: hidden;
+}
