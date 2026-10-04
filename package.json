@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/dom-speech-recognition": "^0.0.12"
+  },
+  "dependencies": {
+    "vue": "^3.5.43"
+  }
+}
