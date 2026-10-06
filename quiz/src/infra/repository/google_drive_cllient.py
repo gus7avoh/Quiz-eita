@@ -40,20 +40,4 @@ class GoogleDriveClient:
             credentials=credentials
         )
 
-    def list_files(self):
-        response = (
-            self.service.files()
-            .list(
-                q=f"'{self.FODER_ID}' in parents and trashed = false",
-                fields="files(id, name, mimeType, modifiedTime)"
-            )
-            .execute()
-        )
-
-        return response.get("files", [])
     
-    
-    
-    
-drive =  GoogleDriveClient()
-print(drive.list_files())
