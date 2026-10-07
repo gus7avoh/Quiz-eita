@@ -53,26 +53,26 @@
 
 
 
-import asyncio
+# import asyncio
 
-from infra.repository.redis_client import RedisClient
-from infra.repository.quiz_repository import QuizRepository
-
-
-async def main():
-    redis_client = RedisClient()
-    repository = QuizRepository(redis_client)
-
-    # await repository.save("quiz:test", "processing")
-
-    # result = await repository.get("quiz:test")
-
-    # print(result)
-
-    # await repository.delete("quiz:test")
+# from infra.repository.redis_client import RedisClient
+# from infra.repository.quiz_repository import QuizRepository
 
 
-asyncio.run(main())
+# async def main():
+#     redis_client = RedisClient()
+#     repository = QuizRepository(redis_client)
+
+#     # await repository.save("quiz:test", "processing")
+
+#     # result = await repository.get("quiz:test")
+
+#     # print(result)
+
+#     # await repository.delete("quiz:test")
+
+
+# asyncio.run(main())
 
 
 

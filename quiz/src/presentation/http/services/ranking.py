@@ -6,7 +6,7 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-redis_client = RedisClient()
+redis_client = RedisClient("REDIS_URL")
 repository = RankingRepository(redis_client)
 
 

@@ -3,7 +3,7 @@ from langchain_core.messages import HumanMessage
 from app.graph.state import QuizState
 from app.prompts import *
 from domain.entities.quiz import Quiz
-from infra.llm.geminiClient import GeminiClient
+from infra.llm.gemini_client import GeminiClient
 
 
 PROMPTS_TEMAS = {

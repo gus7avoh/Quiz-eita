@@ -1,17 +1,19 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from infra.llm.key_manager import GeminiKeyManager
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 
 class GeminiClient:
-
+    
     def __init__(self, structured_output=None):
         self.key_manager = GeminiKeyManager()
         self.structured_output = structured_output
+        self.base_model = "gemini-3.5-flash-lite"
 
     def invoke(self, prompt):
         for _ in range(len(self.key_manager.keys)):
             api_key = self.key_manager.get_key()
-            llm = self.create_llm(api_key)
+            llm = self.create_llm(api_key, self.base_model)
 
             if self.is_structured_output():
                llm = llm.with_structured_output(self.structured_output)
@@ -39,8 +41,9 @@ class GeminiClient:
         return False
 
     @staticmethod
-    def create_llm(api_key: str):
+    def create_llm(api_key: str , base_model: str):
         return ChatGoogleGenerativeAI(
-            model="gemini-3.5-flash-lite",
+            model=base_model,
             google_api_key=api_key,
         )
+

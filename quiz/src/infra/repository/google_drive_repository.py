@@ -1,6 +1,6 @@
 
 from quiz.src.infra.repository.google_drive_cllient import GoogleDriveClient
-from quiz.src.infra.dto.googleDriveFileDTO import GoogleDriveFileDTO
+from quiz.src.infra.dto.google_drive_file_dto import GoogleDriveFileDTO
 
 
 class GoogleDriveRepository:
