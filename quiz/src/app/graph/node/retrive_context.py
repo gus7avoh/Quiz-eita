@@ -1,4 +1,6 @@
 
+import logging
+
 from typing import Any
 
 from app.graph.state import QuizState
@@ -11,21 +13,34 @@ from domain.entities.document_chunk import DocumentChunk
 from quiz.src.infra.document.document_manager import DocumentManager
 
 
+logger = logging.getLogger(__name__)
+
+
 def load_document_content(
     google_drive: GoogleDriveRepository,
     document: GoogleDriveFileDTO,
 ) -> bytes:
     """Baixa o conteúdo bruto de um documento selecionado no Google Drive."""
-    content = google_drive.get_file_content(document.file_id)
-    return content
+    try:
+        content = google_drive.get_file_content(document.file_id)
+        return content
+    except Exception:
+        logger.exception(
+            "Falha ao carregar documento do Google Drive file_id=%s",
+            document.file_id,
+        )
+        raise
 
 
 def create_chunks(text: str, chunk_size: int = 1000):
-    return [
-        text[i:i + chunk_size]
-        for i in range(0, len(text), chunk_size)
-    ]
-    
+    try:
+        return [
+            text[i:i + chunk_size]
+            for i in range(0, len(text), chunk_size)
+        ]
+    except Exception:
+        logger.exception("Falha ao dividir o texto em chunks")
+        raise
 
 def make_embedded_context(
     gemini_embedding_client: GeminiEmbeddingClient,
@@ -34,31 +49,41 @@ def make_embedded_context(
     document_manager: DocumentManager
 ) -> dict[str, Any]:
     """Transforma o conteúdo do documento em embedding e organiza seus metadados."""
-    
-    text = document_manager.extract_text(content, document.mime_type)
+    try:
+        text = document_manager.extract_text(content, document.mime_type)
 
-    chunks = create_chunks(text)
+        chunks = create_chunks(text)
 
-    vectors = gemini_embedding_client.embed_documents(chunks)
+        vectors = gemini_embedding_client.embed_documents(chunks)
 
-    data = []
-    for index, (chunk, vector) in enumerate(zip(chunks, vectors)):
-        data.append(
-            DocumentChunk(
-                id_drive=document.file_id,
-                chunk=index,
-                name=document.name,
-                document_type=document.mime_type, # precisar ser ex python, preciso implementar a função de extração
-                date_modification=document.modified_time,
-                text=chunk,
-                embedding=vector
+        data = []
+        for index, (chunk, vector) in enumerate(zip(chunks, vectors)):
+            data.append(
+                DocumentChunk(
+                    id_drive=document.file_id,
+                    chunk=index,
+                    name=document.name,
+                    document_type=document.mime_type,
+                    date_modification=document.modified_time,
+                    text=chunk,
+                    embedding=vector
+                )
             )
-        )
 
+    except Exception:
+        logger.exception(
+            "Falha ao criar embeddings do documento file_id=%s",
+            document.file_id,
+        )
+        raise
 
 def save_embedded_context(rag_repository: RagRepository, embedded_context: dict[str, Any]) -> None:
     """Salva no Redis o embedding, o conteúdo necessário e a versão do documento."""
-    pass
+    try:
+        pass
+    except Exception:
+        logger.exception("Falha ao salvar embeddings no Redis")
+        raise
 
 
 async def update_cached(
@@ -69,30 +94,55 @@ async def update_cached(
     document_manager: DocumentManager
 ) -> bool:
     """Verifica no Redis se o documento é novo ou se foi alterado no Drive."""
-    content = load_document_content(google_drive, document)
-    embedded_context = make_embedded_context(gemini_embedding_client, document, content, document_manager)
-    save_embedded_context(rag_repository, embedded_context)
-    
-    return True
+    try:
+        content = load_document_content(google_drive, document)
+        embedded_context = make_embedded_context(
+            gemini_embedding_client,
+            document,
+            content,
+            document_manager,
+        )
+        save_embedded_context(rag_repository, embedded_context)
+
+        return True
+    except Exception:
+        logger.exception(
+            "Falha ao atualizar cache do documento file_id=%s",
+            document.file_id,
+        )
+        raise
 
 
 async def delete_cached(rag_repository: RagRepository, file_id: str) -> None:
     """Remove do Redis o embedding, o conteúdo necessário e a versão do documento."""
-    await rag_repository.delete_document(file_id)
+    try:
+        await rag_repository.delete_document(file_id)
+    except Exception:
+        logger.exception(
+            "Falha ao excluir cache do documento file_id=%s",
+            file_id,
+        )
+        raise
 
 
 async def verify_documents_state(document: GoogleDriveFileDTO, rag_repository: RagRepository) -> str:
     """Verifica se os documentos do Drive foram alterados, adicionados ou removidos em relação ao que está armazenado no Redis."""
-    
-    data = await rag_repository.get(document.file_id, 0)
-    
-    if data is None:
-        return "update"
-    
-    elif data and data.get("date_modification") != document.modified_time:
-        return "update"
-    
-    return "none"
+    try:
+        data = await rag_repository.get(document.file_id, 0)
+
+        if data is None:
+            return "update"
+
+        elif data and data.get("date_modification") != document.modified_time:
+            return "update"
+
+        return "none"
+    except Exception:
+        logger.exception(
+            "Falha ao verificar estado do documento file_id=%s",
+            document.file_id,
+        )
+        raise
 
 
 async def syncronize_cache(
@@ -102,42 +152,61 @@ async def syncronize_cache(
     document_manager: DocumentManager
 ) -> None:
     """Sincroniza os documentos do Drive com os embeddings armazenados no Redis."""
-    
-    google_drive_files = google_drive.list_files()
-    redis_files = await rag_repository.list_documents()
-    google_drive_ids = {document.file_id for document in google_drive_files}
-    
-    for file_id in redis_files:
-        if file_id not in google_drive_ids:
-            await delete_cached(rag_repository, file_id)
-    
-    for document in google_drive_files:
-        state = await verify_documents_state(document, rag_repository)
-        if (state == "update"):
-            await update_cached(google_drive, gemini_embedding_client, rag_repository, document, document_manager)
+    try:
+        google_drive_files = google_drive.list_files()
+        redis_files = await rag_repository.list_documents()
+        google_drive_ids = {document.file_id for document in google_drive_files}
+
+        for file_id in redis_files:
+            if file_id not in google_drive_ids:
+                await delete_cached(rag_repository, file_id)
+
+        for document in google_drive_files:
+            state = await verify_documents_state(document, rag_repository)
+            if state == "update":
+                await update_cached(
+                    google_drive,
+                    gemini_embedding_client,
+                    rag_repository,
+                    document,
+                    document_manager,
+                )
+    except Exception:
+        logger.exception("Falha ao sincronizar cache de documentos")
+        raise
 
 
 
 def search_context_in_redis(state: QuizState) -> list[str]:
     """Busca no Redis os trechos mais relevantes para o tema atual do quiz."""
-    pass
+    try:
+        pass
+    except Exception:
+        logger.exception("Falha ao buscar contexto no Redis")
+        raise
 
 
 async def retrieve_context(state: QuizState) -> dict[str, Any]:
     """Atualiza a base de embeddings e devolve o contexto para o próximo nó do grafo."""
-    google_drive = GoogleDriveRepository()
-    
-    redis_client = RedisClient("REDIS_URL_RAG")
-    rag_repository = RagRepository(redis_client)
-    
-    gemini_embedding_client = GeminiEmbeddingClient(base_model="gemini-embedding-2")
-    documente_manager = DocumentManager(pdf_extractor=gemini_embedding_client)
-    
-    await syncronize_cache(google_drive, rag_repository, gemini_embedding_client, documente_manager)
-    
-    context = search_context_in_redis(state)
-    
-    state.set("context", context)
-    
-    
-            
+    try:
+        google_drive = GoogleDriveRepository()
+
+        redis_client = RedisClient("REDIS_URL_RAG")
+        rag_repository = RagRepository(redis_client)
+
+        gemini_embedding_client = GeminiEmbeddingClient(base_model="gemini-embedding-2")
+        document_manager = DocumentManager(pdf_extractor=gemini_embedding_client)
+
+        await syncronize_cache(
+            google_drive,
+            rag_repository,
+            gemini_embedding_client,
+            document_manager,
+        )
+
+        context = search_context_in_redis(state)
+
+        state.set("context", context)
+    except Exception:
+        logger.exception("Falha no node retrieve_context")
+        raise

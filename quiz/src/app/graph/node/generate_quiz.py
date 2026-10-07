@@ -1,3 +1,5 @@
+import logging
+
 from langchain_core.messages import HumanMessage
 
 from app.graph.state import QuizState
@@ -21,32 +23,41 @@ gemini_client = GeminiClient(
     structured_output=Quiz
 )
 
+logger = logging.getLogger(__name__)
+
 
 def build_prompt(state: QuizState):
-    tema = state.get("tema", "").strip().lower()
-    prompt_base = quiz_prompt(state)
-    prompt_tema = PROMPTS_TEMAS.get(tema)
+    try:
+        tema = state.get("tema", "").strip().lower()
+        prompt_base = quiz_prompt(state)
+        prompt_tema = PROMPTS_TEMAS.get(tema)
 
-    if prompt_tema:
-        return prompt_base + prompt_tema()
+        if prompt_tema:
+            return prompt_base + prompt_tema()
 
-    return prompt_base
+        return prompt_base
+    except Exception:
+        logger.exception("Falha ao construir o prompt do quiz")
+        raise
 
 
 def generate_quiz(state: QuizState):
+    try:
+        print("Iniciando geração de perguntas...")
 
-    print("Iniciando geração de perguntas...")
+        prompt = build_prompt(state)
 
-    prompt = build_prompt(state)
+        print("Enviando para o Gemini...")
 
-    print("Enviando para o Gemini...")
+        response = gemini_client.invoke([
+            HumanMessage(content=prompt)
+        ])
 
-    response = gemini_client.invoke([
-        HumanMessage(content=prompt)
-    ])
+        print("Resposta gerada...")
 
-    print("Resposta gerada...")
-
-    return {
-        "perguntas": response.perguntas,
-    }
+        return {
+            "perguntas": response.perguntas,
+        }
+    except Exception:
+        logger.exception("Falha no node generate_quiz")
+        raise
