@@ -28,6 +28,23 @@ class RagRepository:
 
         return json.loads(result)
     
+    async def search_context(self, tema: str) -> list[dict]:
+        context = []
+        tema =  tema.lower()
+
+        async for key in self.redis.scan_iter(match="id_drive:*:chunk:*"):
+            raw_chunk = await self.redis.get(key)
+
+            if raw_chunk is None:
+                continue
+
+            chunk = json.loads(raw_chunk)
+
+            if chunk.get("document_type").lower() == tema:
+                context.append(chunk)
+
+        return context
+        
     
     async def list_documents(self):
         documents = {}

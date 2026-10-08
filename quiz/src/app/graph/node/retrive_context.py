@@ -192,16 +192,19 @@ async def syncronize_cache(
 
 
 
-def search_context_in_redis(state: QuizState) -> list[str]:
+async def search_context_in_redis(rag_repository: RagRepository, state: QuizState) -> list[str]:
     """Busca no Redis os trechos mais relevantes para o tema atual do quiz."""
     try:
-        pass
+        tema = state.get("tema", "").strip().lower()
+        context = await rag_repository.search_context(tema)
+        return context
+        
     except Exception:
         logger.exception("Falha ao buscar contexto no Redis")
         raise
 
 
-async def retrieve_context(state: QuizState) -> dict[str, Any]:
+async def retrive_context(state: QuizState) -> dict[str, Any]:
     """Atualiza a base de embeddings e devolve o contexto para o próximo nó do grafo."""
     try:
         google_drive = GoogleDriveRepository()
@@ -219,7 +222,7 @@ async def retrieve_context(state: QuizState) -> dict[str, Any]:
             document_manager,
         )
 
-        context = search_context_in_redis(state)
+        context = await search_context_in_redis(rag_repository, state)
 
         state.set("context", context)
     except Exception:
