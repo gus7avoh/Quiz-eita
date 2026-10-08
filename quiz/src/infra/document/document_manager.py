@@ -13,6 +13,6 @@ class DocumentManager:
         reader = PdfReader(BytesIO(content))
 
         return "\n".join(
-            page.extract_text() or ""
+            page.extract_text(extraction_mode="layout") or ""
             for page in reader.pages
         )

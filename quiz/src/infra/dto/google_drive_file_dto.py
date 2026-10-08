@@ -1,6 +1,6 @@
 class GoogleDriveFileDTO:
-    def __init__(self, file_id, name, mime_type, modified_time):
-        self.file_id = file_id
+    def __init__(self, id, name, mimeType, modifiedTime):
+        self.file_id = id
         self.name = name
-        self.mime_type = mime_type
-        self.modified_time = modified_time
+        self.mime_type = mimeType
+        self.modified_time = modifiedTime

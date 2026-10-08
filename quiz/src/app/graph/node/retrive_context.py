@@ -10,7 +10,7 @@ from infra.repository.rag_repository import RagRepository
 from infra.repository.redis_client import RedisClient
 from infra.llm.gemini_embedding_client import GeminiEmbeddingClient
 from domain.entities.document_chunk import DocumentChunk
-from quiz.src.infra.document.document_manager import DocumentManager
+from infra.document.document_manager import DocumentManager
 
 
 logger = logging.getLogger(__name__)
@@ -42,19 +42,19 @@ def create_chunks(text: str, chunk_size: int = 1000):
         logger.exception("Falha ao dividir o texto em chunks")
         raise
 
-def make_embedded_context(
+async def make_embedded_context(
     gemini_embedding_client: GeminiEmbeddingClient,
     document: GoogleDriveFileDTO,
     content: bytes,
     document_manager: DocumentManager
-) -> dict[str, Any]:
+) -> list[DocumentChunk]:
     """Transforma o conteúdo do documento em embedding e organiza seus metadados."""
     try:
         text = document_manager.extract_text(content, document.mime_type)
 
         chunks = create_chunks(text)
 
-        vectors = gemini_embedding_client.embed_documents(chunks)
+        vectors = await gemini_embedding_client.embed_documents(chunks)
 
         data = []
         for index, (chunk, vector) in enumerate(zip(chunks, vectors)):
@@ -63,12 +63,14 @@ def make_embedded_context(
                     id_drive=document.file_id,
                     chunk=index,
                     name=document.name,
-                    document_type=document.mime_type,
+                    mime_type=document.mime_type,
                     date_modification=document.modified_time,
                     text=chunk,
                     embedding=vector
                 )
             )
+
+        return data
 
     except Exception:
         logger.exception(
@@ -77,10 +79,20 @@ def make_embedded_context(
         )
         raise
 
-def save_embedded_context(rag_repository: RagRepository, embedded_context: dict[str, Any]) -> None:
+async def save_embedded_context(rag_repository: RagRepository, embedded_context: list[DocumentChunk]) -> None:
     """Salva no Redis o embedding, o conteúdo necessário e a versão do documento."""
     try:
-        pass
+        for document in embedded_context:
+            
+            logger.info(
+                "Salvando embeddings no Redis para file_id=%s, chunk=%d",
+                document.id_drive,
+                document.chunk,
+                document.name,
+                document.embedding
+            )
+            await rag_repository.create(document)
+            
     except Exception:
         logger.exception("Falha ao salvar embeddings no Redis")
         raise
@@ -96,13 +108,13 @@ async def update_cached(
     """Verifica no Redis se o documento é novo ou se foi alterado no Drive."""
     try:
         content = load_document_content(google_drive, document)
-        embedded_context = make_embedded_context(
+        embedded_context = await make_embedded_context(
             gemini_embedding_client,
             document,
             content,
             document_manager,
         )
-        save_embedded_context(rag_repository, embedded_context)
+        await save_embedded_context(rag_repository, embedded_context)
 
         return True
     except Exception:
@@ -131,7 +143,7 @@ async def verify_documents_state(document: GoogleDriveFileDTO, rag_repository: R
         data = await rag_repository.get(document.file_id, 0)
 
         if data is None:
-            return "update"
+            return "insert"
 
         elif data and data.get("date_modification") != document.modified_time:
             return "update"
@@ -164,6 +176,9 @@ async def syncronize_cache(
         for document in google_drive_files:
             state = await verify_documents_state(document, rag_repository)
             if state == "update":
+                await delete_cached(rag_repository, file_id)
+                
+            if state in ["update", "insert"]:
                 await update_cached(
                     google_drive,
                     gemini_embedding_client,

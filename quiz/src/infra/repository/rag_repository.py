@@ -1,4 +1,5 @@
 import json
+from domain.entities.document_chunk import DocumentChunk
 
 class RagRepository:
     def __init__(self, redis_client):
@@ -6,22 +7,16 @@ class RagRepository:
 
     async def create(
         self,
-        id_drive: str,
-        chunk: int,
-        name: str,
-        document_type: str,
-        date_modification: str,
-        text: str,
-        embedding: list[float]
+        document_chunk: DocumentChunk
     ):
         await self.redis.set(
-            f"id_drive:{id_drive}:chunk:{chunk}",
+            f"id_drive:{document_chunk.id_drive}:chunk:{document_chunk.chunk}",
             json.dumps({
-                "name": name,
-                "document_type": document_type,
-                "date_modification": date_modification,
-                "text": text,
-                "embedding": embedding
+                "name": document_chunk.name,
+                "document_type": document_chunk.document_type,
+                "date_modification": document_chunk.date_modification,
+                "text": document_chunk.text,
+                "embedding": document_chunk.embedding
             })
         )
 

@@ -5,24 +5,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class GeminiKeyManager:
+    total_keys = 58
     def __init__(self):
         self.switched = False
 
         self.keys = [
-            getenv("EITA_1"),
-            getenv("EITA_2"),
-            getenv("EITA_4"),
-            getenv("EITA_5"),
-            getenv("EITA_6"),
-            getenv("EITA_7"),
-            getenv("EITA_8"),
-            getenv("EITA_9"),
-            getenv("EITA_10"),
+            getenv(f"EITA_{i}")
+            for i in range(1, GeminiKeyManager.total_keys + 1)
         ]
 
         self.keys = [key for key in self.keys if key]
 
         self.current_key = 0
+        
 
     def get_key(self):
         return self.keys[self.current_key]

@@ -53,26 +53,17 @@
 
 
 
-# import asyncio
+import asyncio
 
-# from infra.repository.redis_client import RedisClient
-# from infra.repository.quiz_repository import QuizRepository
+from infra.repository.redis_client import RedisClient
+from infra.repository.quiz_repository import QuizRepository
+from app.graph.node.retrive_context import retrieve_context
 
+async def main():
+    
+    await retrieve_context({"context": []})
 
-# async def main():
-#     redis_client = RedisClient()
-#     repository = QuizRepository(redis_client)
-
-#     # await repository.save("quiz:test", "processing")
-
-#     # result = await repository.get("quiz:test")
-
-#     # print(result)
-
-#     # await repository.delete("quiz:test")
-
-
-# asyncio.run(main())
+asyncio.run(main())
 
 
 
