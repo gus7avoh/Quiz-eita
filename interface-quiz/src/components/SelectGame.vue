@@ -2,14 +2,23 @@
 </script>
 
 <template>
+  <div id="janela">
+    <h1>ESTOU AQUI</h1>
+  </div>
     
-
 </template>
 
 <style scoped>
 
 
-/* From Uiverse.io by 0xnihilism */ 
+#janela{
+  background-color: white;
+  display: flex;
+  flex:1;
+  height: 100%;
+  width: 100%;
+}
+
 .input {
   width: 100%;
   max-width: 270px;
