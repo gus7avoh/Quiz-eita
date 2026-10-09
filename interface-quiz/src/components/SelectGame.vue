@@ -5,6 +5,9 @@
     enunciado: string
     alternativas: string[]
   }
+  interface RespostaQuiz{
+    perguntas: Pergunta[]
+  }
 
   const tema = ref('')
   const uuid = ref<string | null>(null)
@@ -22,9 +25,19 @@
       }),
     })
 
+    if(!response.ok) {
+      console.error('Erro ao gerar quiz, status: ', response.status )
+      return
+    }
+
     const data = await response.json()
-    uuid.value = data.uuid
-    await buscarPerguntas(data.uuid)
+
+    if(data?.uuid) {
+      uuid.value = data.uuid
+      await buscarPerguntas(data.uuid)
+    }
+    else{console.error('Erro ao gerar id')}
+    
   }
 
   
@@ -38,9 +51,14 @@
 
       })
 
-      const data = await response.json()
+      if(!response.ok) {
+        console.log('Erro ao buscar perguntas: ', response.status)
+        return
+      }
 
-      if(data != null && data.perguntas) {
+      const data: RespostaQuiz | null = await response.json()
+
+      if(data?.perguntas && data.perguntas.length>0) {
         perguntas.value = data.perguntas
         return
       }
