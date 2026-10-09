@@ -1,15 +1,100 @@
 <script lang="ts" setup>
+  import { ref } from 'vue'
+
+  interface Pergunta {
+    enunciado: string
+    alternativas: string[]
+  }
+  interface RespostaQuiz{
+    perguntas: Pergunta[]
+  }
+
+  const tema = ref('')
+  const uuid = ref<string | null>(null)
+  const perguntas = ref<Pergunta[] | null>(null)
+  
+
+  async function gerarQuiz() {
+    const response = await fetch('http://127.0.0.1:8000/quiz/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tema: tema.value,
+        quantidade: 5,
+        dificuldade: 'mista',
+      }),
+    })
+
+    if(!response.ok) {
+      console.error('Erro ao gerar quiz, status: ', response.status )
+      return
+    }
+
+    const data = await response.json()
+
+    if(data?.uuid) {
+      uuid.value = data.uuid
+      await buscarPerguntas(data.uuid)
+    }
+    else{console.error('Erro ao gerar id')}
+    
+  }
+
+  
+  async function buscarPerguntas(id: string) {
+
+    for (let i=0; i<20; i++) {
+      const response = await fetch('http://127.0.0.1:8000/quiz/question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify({ uuid: id }),
+
+      })
+
+      if(!response.ok) {
+        console.log('Erro ao buscar perguntas: ', response.status)
+        return
+      }
+
+      const data: RespostaQuiz | null = await response.json()
+
+      if(data?.perguntas && data.perguntas.length>0) {
+        perguntas.value = data.perguntas
+        return
+      }
+      
+      if(i<19) {await new Promise(resolve => setTimeout(resolve, 2000))}
+      
+    }
+    console.error('Quiz demorou dms ou falhou')
+  }
+
+
 </script>
 
 <template>
-    
+  <div id="janela">
 
+    <h1>ESTOU AQUI</h1>
+    <input v-model="tema" placeholder="Tema do quiz"/>
+    <button @click="gerarQuiz">Criar quiz</button>
+    <p v-if="perguntas">Perguntas: {{ perguntas }}</p>
+    
+  </div>
+    
 </template>
 
 <style scoped>
 
 
-/* From Uiverse.io by 0xnihilism */ 
+#janela{
+  background-color: white;
+  display: flex;
+  flex:1;
+  height: 100%;
+  width: 100%;
+}
+
 .input {
   width: 100%;
   max-width: 270px;

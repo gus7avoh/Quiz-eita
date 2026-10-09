@@ -65,11 +65,14 @@ const ranking: string[] = [
 .side-bar {
     box-sizing: border-box;
     padding: 20px;
-    min-height: 80vh;
-    width: clamp(240px, 25%, 400px);
+    min-height: 0;
+    min-width: 0;
+    width:100%;
+    height: 100%;
     background-color: #444;
     border-radius: 15px;
-    margin-left: 20px;
+    overflow: hidden;
+    
 }
 
 .title {
