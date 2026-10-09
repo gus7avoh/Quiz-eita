@@ -44,8 +44,7 @@ async def process_quiz(
 ):
     try:
         logger.info("Processando quiz uuid=%s", uuid)
-        result = await asyncio.to_thread(
-            graph.invoke,
+        result = await graph.ainvoke(
             {
                 "tema": tema,
                 "quantidade": quantidade,

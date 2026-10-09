@@ -5,18 +5,17 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 class GeminiClient:
     
-    def __init__(self, structured_output=None):
+    def __init__(self):
         self.key_manager = GeminiKeyManager()
-        self.structured_output = structured_output
         self.base_model = "gemini-3.5-flash-lite"
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, structured_output=None):
         for _ in range(len(self.key_manager.keys)):
             api_key = self.key_manager.get_key()
             llm = self.create_llm(api_key, self.base_model)
 
-            if self.is_structured_output():
-               llm = llm.with_structured_output(self.structured_output)
+            if structured_output:
+               llm = llm.with_structured_output(structured_output)
 
             try:
                 result = llm.invoke(prompt)
@@ -35,10 +34,6 @@ class GeminiClient:
 
         raise Exception("Internal Server Error", 500)
 
-    def is_structured_output(self):
-        if self.structured_output:
-            return True
-        return False
 
     @staticmethod
     def create_llm(api_key: str , base_model: str):

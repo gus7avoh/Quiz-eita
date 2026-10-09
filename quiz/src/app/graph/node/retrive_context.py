@@ -54,7 +54,7 @@ async def make_embedded_context(
 
         chunks = create_chunks(text)
 
-        vectors = await gemini_embedding_client.embed_documents(chunks)
+        vectors = await gemini_embedding_client.create_embedding(chunks)
 
         data = []
         for index, (chunk, vector) in enumerate(zip(chunks, vectors)):
@@ -224,7 +224,7 @@ async def retrive_context(state: QuizState) -> dict[str, Any]:
 
         context = await search_context_in_redis(rag_repository, state)
 
-        state.set("context", context)
+        return {"context": context}
     except Exception:
         logger.exception("Falha no node retrieve_context")
         raise

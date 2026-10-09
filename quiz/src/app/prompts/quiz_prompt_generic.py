@@ -1,4 +1,4 @@
-def quiz_prompt(state: dict):
+def quiz_prompt_generic(state: dict):
     return f"""
     Crie {state["quantidade"]} perguntas de quiz.
 

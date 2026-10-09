@@ -10,7 +10,7 @@ class GeminiEmbeddingClient:
         self.key_manager = GeminiKeyManager()
         self.base_model = base_model
 
-    async def embed_documents(self, chunk_list: list[str]) -> list[list[float]]:
+    async def create_embedding(self, chunk_list: list[str]) -> list[list[float]]:
         if not chunk_list:
             return []
 
