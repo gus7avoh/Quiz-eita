@@ -1,8 +1,15 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
 
+  interface Pergunta {
+    enunciado: string
+    alternativas: string[]
+  }
+
   const tema = ref('')
-  const uuid = ref(null)
+  const uuid = ref<string | null>(null)
+  const perguntas = ref<Pergunta[] | null>(null)
+  
 
   async function gerarQuiz() {
     const response = await fetch('http://127.0.0.1:8000/quiz/create', {
@@ -16,11 +23,13 @@
     })
 
     const data = await response.json()
+    uuid.value = data.uuid
     await buscarPerguntas(data.uuid)
   }
 
-  const perguntas = ref(null)
-   async function buscarPerguntas(id: string) {
+  
+  async function buscarPerguntas(id: string) {
+
     for (let i=0; i<20; i++) {
       const response = await fetch('http://127.0.0.1:8000/quiz/question', {
         method: 'POST',
@@ -28,25 +37,31 @@
         body: JSON.stringify({ uuid: id }),
 
       })
+
       const data = await response.json()
+
       if(data != null && data.perguntas) {
         perguntas.value = data.perguntas
         return
       }
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      if(i<19) {await new Promise(resolve => setTimeout(resolve, 2000))}
+      
     }
     console.error('Quiz demorou dms ou falhou')
-   }
+  }
 
 
 </script>
 
 <template>
   <div id="janela">
+
     <h1>ESTOU AQUI</h1>
     <input v-model="tema" placeholder="Tema do quiz"/>
     <button @click="gerarQuiz">Criar quiz</button>
-    <p v-if="uuid">UUID: {{ uuid }}</p>
+    <p v-if="perguntas">Perguntas: {{ perguntas }}</p>
+    
   </div>
     
 </template>
