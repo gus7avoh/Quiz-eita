@@ -1,73 +1,42 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
-
-  interface Pergunta {
-    enunciado: string
-    alternativas: string[]
-  }
-  interface RespostaQuiz{
-    perguntas: Pergunta[]
-  }
+  import { criarQuiz, buscarQuiz } from '../service/QuizService'
+  import type { BuscarQuizResponse } from '../types/QuizTypes'
 
   const tema = ref('')
-  const uuid = ref<string | null>(null)
-  const perguntas = ref<Pergunta[] | null>(null)
+  const uuid = ref<string | null> (null)
+  const perguntas = ref<BuscarQuizResponse | null> (null)
   
-
+    //função de criar quiz que chama criarQuiz do QuizService
   async function gerarQuiz() {
-    const response = await fetch('http://127.0.0.1:8000/quiz/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tema: tema.value,
-        quantidade: 5,
-        dificuldade: 'mista',
-      }),
-    })
 
-    if(!response.ok) {
-      console.error('Erro ao gerar quiz, status: ', response.status )
-      return
+    try {
+
+      const id = await criarQuiz({tema: tema.value, quantidade: 5, dificuldade: 'misto'}) 
+      uuid.value=id
+      await esperarResposta(id)
+
     }
+    catch(e) {console.error(e)}
+  }
 
-    const data = await response.json()
-
-    if(data?.uuid) {
-      uuid.value = data.uuid
-      await buscarPerguntas(data.uuid)
-    }
-    else{console.error('Erro ao gerar id')}
+    //função de pegar respostas que chama buscarQuiz do QuizService
+  async function esperarResposta(id: string) {
     
+      for(let i=0; i<20; i++) { //tenta chamar buscarQuiz 20 vezes
+        const resultado = await buscarQuiz(id)
+
+        if(resultado) {
+          perguntas.value=resultado
+          return
+        }
+
+        //espera 2 segundos antes de tentar de novo
+        if(i<19) await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    console.error('Quiz demorou demais ou falhou')
   }
 
-  
-  async function buscarPerguntas(id: string) {
-
-    for (let i=0; i<20; i++) {
-      const response = await fetch('http://127.0.0.1:8000/quiz/question', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json'},
-        body: JSON.stringify({ uuid: id }),
-
-      })
-
-      if(!response.ok) {
-        console.log('Erro ao buscar perguntas: ', response.status)
-        return
-      }
-
-      const data: RespostaQuiz | null = await response.json()
-
-      if(data?.perguntas && data.perguntas.length>0) {
-        perguntas.value = data.perguntas
-        return
-      }
-      
-      if(i<19) {await new Promise(resolve => setTimeout(resolve, 2000))}
-      
-    }
-    console.error('Quiz demorou dms ou falhou')
-  }
 
 
 </script>
@@ -78,7 +47,24 @@
     <h1>ESTOU AQUI</h1>
     <input v-model="tema" placeholder="Tema do quiz"/>
     <button @click="gerarQuiz">Criar quiz</button>
-    <p v-if="perguntas">Perguntas: {{ perguntas }}</p>
+
+    <div v-if="perguntas">
+
+        <div v-for="(pergunta, index) in perguntas.perguntas":key="index">
+          <h3>{{ pergunta.enunciado }}</h3>
+          <ul>
+
+            <li v-for="(alternativa, i) in pergunta.alternativas">
+
+                {{ alternativa }}
+
+            </li>
+
+          </ul>
+
+        </div>
+
+    </div>
     
   </div>
     
