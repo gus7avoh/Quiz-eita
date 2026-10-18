@@ -97,7 +97,6 @@ function proximaQuestao() {
                             wrong: respostaResponse && alternativaSelecionada === alternativa && !respostaResponse.correta
                         }"
                     >
-                        <span class="option-key">{{ 'ABCDEFGH'[i] }}</span>
                         <span class="option-text">{{ alternativa }}</span>
                     </span>
 
