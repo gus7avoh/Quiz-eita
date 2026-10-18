@@ -272,7 +272,7 @@ async function organizarLista() {
 }
 
 .podium-3 .pos {
-    background: #E39A5C;
+    background: #e7602b;
     color: var(--ink);
 }
 
