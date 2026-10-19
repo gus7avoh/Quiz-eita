@@ -26,9 +26,16 @@ const alternativaSelecionada = ref<string | null> (null)
 const acertos = ref<number>(0)
 const nomeUsuario = ref('')
 const erro = ref('')
+const enviando = ref(false)
+const respondida = computed(() => respostaResponse.value !== null)
 
 
 async function enviarResposta() {
+
+    if (enviando.value || respondida.value || !alternativaSelecionada.value) return
+
+    enviando.value = true
+    erro.value = ''
 
     const respostaRequest: RespostaRequest = ({uuid: props.uuid, 'enunciado': perguntaAtual.value.enunciado, 'resposta_usuario': alternativaSelecionada.value!})
 
@@ -42,6 +49,9 @@ async function enviarResposta() {
         console.error(e)
         erro.value='Houve um erro ao responder o quiz, tente novamente'
         }
+    finally{
+        enviando.value = false
+    }
     
 }
 
@@ -51,6 +61,7 @@ function proximaQuestao() {
         indice.value++
         alternativaSelecionada.value = null
         respostaResponse.value = null
+        erro.value=''
     }
     else {
         estadoQuiz.value = EnumQuizGame.resultado
@@ -88,6 +99,7 @@ function proximaQuestao() {
                     name="alternativa"
                     :value="alternativa"
                     v-model="alternativaSelecionada"
+                    :disabled="respondida"
                     />
 
                     <span
@@ -105,7 +117,7 @@ function proximaQuestao() {
             </div>
 
             <div class="actions">
-                <button class="btn" :disabled="!alternativaSelecionada" @click="enviarResposta">Responder</button>
+                <button class="btn" :disabled="!alternativaSelecionada" @click="enviarResposta">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
             </div>
 
