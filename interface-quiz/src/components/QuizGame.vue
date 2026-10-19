@@ -27,6 +27,7 @@ const acertos = ref<number>(0)
 const nomeUsuario = ref('')
 const erro = ref('')
 const enviando = ref(false)
+const enviado = ref(false)
 const respondida = computed(() => respostaResponse.value !== null)
 
 
@@ -66,6 +67,13 @@ function proximaQuestao() {
     else {
         estadoQuiz.value = EnumQuizGame.resultado
     }
+}
+
+function enivarRanking() {
+    if(enviado.value || !nomeUsuario.value.trim()) return
+
+    enviado.value = true
+    emit('voltarMenu', { nome: nomeUsuario.value.trim(), pontos: acertos.value })
 }
 
 </script>
@@ -174,8 +182,8 @@ function proximaQuestao() {
 
         <div class="save">
             <input class="text-input" v-model="nomeUsuario" placeholder="Digite seu nome para o ranking" aria-label="Seu nome para o ranking"/>
-            <button class="btn" :disabled="!nomeUsuario.trim()" @click="emit('voltarMenu', {nome: nomeUsuario, pontos: acertos})">
-                Enviar e voltar para menu
+            <button class="btn" :disabled="!nomeUsuario.trim()" @click="enivarRanking">
+                {{ enviado ? 'Enviando...' : 'Enviar' }}
             </button>
         </div>
 
