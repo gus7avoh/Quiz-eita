@@ -42,5 +42,7 @@ class QuizRepository:
         )
 
 
-    async def delete(self, quiz_id: str):
-        await self.redis.delete(f"quiz:{quiz_id}")
+    async def delete(self, quiz_id: str) -> bool:
+        id  =  f"quiz:{quiz_id}"
+        deleted_count = await self.redis.delete(id)
+        return deleted_count > 0
