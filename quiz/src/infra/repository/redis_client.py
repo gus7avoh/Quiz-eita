@@ -1,9 +1,10 @@
 import redis.asyncio as redis
 from os import getenv
-from pathlib import Path
-from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[3] / ".env")
+from infra.environment import load_project_environment
+
+
+load_project_environment()
 
 
 class RedisClient:

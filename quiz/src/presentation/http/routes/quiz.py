@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from presentation.http.schemas.quiz import (
+from presentation.http.schemas import (
     QuizCreatedResponse,
     QuizRequest,
     QuizQuestionsResponse,
@@ -45,4 +45,6 @@ async def answer_quiz(data: QuizAnswerRequest) -> QuizAnswerResponse|None:
 
 @router.delete("", response_model=QuizDeleteResponse|None)
 async def delete_quiz(data: QuizDeleteListRequest) -> QuizDeleteResponse|None:
-    return await delete_quiz_service(list_uuid=data.list_uuid)
+    return await delete_quiz_service(
+        list_uuid=[item.uuid for item in data.list_uuid],
+    )

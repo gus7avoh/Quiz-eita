@@ -3,10 +3,10 @@ import time
 import uuid
 from os import getenv
 
-from dotenv import load_dotenv
 from domain.entities.api_key import ApiKey
+from infra.environment import load_project_environment
 
-load_dotenv()
+load_project_environment()
 
 ApiKeyState = ApiKey
 

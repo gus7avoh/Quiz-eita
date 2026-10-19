@@ -1,7 +1,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
-  import { criarQuiz, buscarQuiz } from '../service/QuizService'
-  import type { BuscarQuizResponse } from '../types/QuizTypes'
+  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario } from '../service/QuizService'
+  import type { BuscarQuizResponse, DeletarRequest, Usuario } from '../types/QuizTypes'
   import QuizGame from './QuizGame.vue'
 
   const tema = ref('')
@@ -19,7 +19,7 @@
 
     try {
 
-      const id = await criarQuiz({tema: tema.value, quantidade: 5, dificuldade: dificuldade.value}) 
+      const id = await criarQuiz({tema: tema.value.trim(), quantidade: 5, dificuldade: dificuldade.value}) 
       uuid.value=id
       await esperarResposta(id)
 
@@ -53,7 +53,32 @@
 
   }
 
-  function voltarMenu() {
+  async function voltarMenu(usuario: Usuario) {
+    try{
+      const resultado = await adicionarUsuario(usuario.nome, usuario.pontos, dificuldade.value)
+      console.log(resultado ? 'usuario adicionado com sucesso' : 'usuario não foi adicionado')
+    }
+    catch(e) {
+      console.error('Erro ao adicionar usuario', e)
+    }
+    
+    if (!uuid.value) {
+      quiz.value = null
+      uuid.value = ''
+      tema.value = ''
+      dificuldade.value = ''
+      return
+    }
+
+    const quizes: DeletarRequest = { list_uuid: [{uuid: uuid.value}] }
+
+    try{
+      const resultado = await deletarQuiz(quizes)
+      console.log(resultado ? 'quiz deletado com sucesso' : 'quiz não foi deletado')
+    }
+    catch(e) {console.error('Erro ao deletar quiz', e)}
+    
+
     quiz.value=null
     uuid.value=''
     tema.value=''
@@ -79,19 +104,21 @@
       <div v-if = "!quiz">
         
         <input v-model="tema" placeholder="Tema do quiz"/>
-        Selecione uma dificuldade
 
+        <label for="dificuldade">Selecione uma dificuldade</label>        
         <select v-model="dificuldade" id="dificuldade">
 
-          <option>Fácil</option>
-          <option>Médio</option>
-          <option>Difícil</option>
-          <option>Impossível</option>
-          <option>Mista</option>
+          <option disabled value="">Escolha...</option>
+          <option value="Fácil">Fácil</option>
+          <option value="Médio">Médio</option>
+          <option value="Difícil">Difícil</option>
+          <option value="Impossível">Impossível</option>
+          <option value="Misto">Misto</option>
 
         </select>
+        
 
-        <button :disabled="carregando || !tema || !dificuldade" @click="gerarQuiz">
+        <button :disabled="carregando || !tema.trim() || !dificuldade" @click="gerarQuiz">
           {{carregando ? 'Gerando...' : 'Criar quiz'}}
         </button>
 
@@ -104,7 +131,8 @@
       <QuizGame v-else 
         :perguntas="quiz.perguntas"
         :uuid='uuid'
-        @voltar-menu="voltarMenu"
+        :dificuldade="dificuldade"
+        @voltar-menu= "voltarMenu"
       />
 
     </main>

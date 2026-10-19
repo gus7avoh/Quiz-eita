@@ -1,6 +1,8 @@
-import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest } from '../types/QuizTypes'
+import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequest, Ranking, RespostaResponse } from '../types/QuizTypes'
 
-const API_URL = 'http://127.0.0.1:8000'
+// Empty by default means same-origin in production. Set VITE_API_URL only
+// when the API is intentionally hosted on another origin.
+const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
 //método de gerar quiz retornando um uuid em string
 export async function criarQuiz(req: CriarQuizRequest): Promise<string> {
@@ -36,28 +38,74 @@ export async function buscarQuiz(uuid: string): Promise<BuscarQuizResponse | nul
 }
 
 //Método de enviar respostas usando uuid e uma lista de enunciados com alternatvias
-export async function responderQuiz(request: RespostaRequest): Promise <number | null> {
+export async function responderQuiz(request: RespostaRequest): Promise <RespostaResponse> {
 
-    let acertos = 0
-    const uuid = request.uuid
+    const response = await fetch(`${API_URL}/quiz/answer`, {
 
-    for(let i=0; i<request.respostas.length; i++) {
+    method: 'POST',
+    headers: { 'Content-Type' : 'application/json' },
+    body: JSON.stringify({uuid: request.uuid, enunciado: request.enunciado, resposta_usuario: request.resposta_usuario}),
+    })
 
-        const enunciado = request.respostas[i].enunciado
-        const resposta_usuario = request.respostas[i].resposta
+    if(!response.ok) throw new Error(`Houve um erro ao enviar respostas: ${response.status}`)
+    
+    const data = await response.json()
 
-        const response = await fetch(`${API_URL}/quiz/answer`, {
+    return data.resposta
+}
 
+//Método para excluir um quiz usando uuid
+export async function deletarQuiz(request: DeletarRequest): Promise <boolean> {
+
+    if(!request?.list_uuid?.length) {return false}
+
+    const response = await fetch(`${API_URL}/quiz/` , {
+        method: 'DELETE',
+        headers: { 'Content-Type' : 'application/json' },
+        body: JSON.stringify(request)
+    })
+    
+    if(!response.ok) throw new Error(`Houve um erro ao excluir o quiz: ${response.status}`)
+    
+    const data = await response.json()
+    
+    return data.excluded
+}
+//Método para puxar todos os usuarios
+export async function buscarUsuarios(): Promise <Ranking>{ 
+    const response = await fetch(`${API_URL}/ranking`, {
+        method: 'GET',
+        headers: { 'Content-Type' : 'application/json' },
+    })
+
+    if(!response.ok) throw new Error(`Houve um erro ao buscar usuarios: ${response.status}`)
+    
+    const data = await response.json()
+    
+    return data
+}
+
+//Método para adicionar um usuario com pontuação no ranking
+export async function adicionarUsuario(nome: string, pontos: number, dificuldade: string): Promise <boolean> {
+    const response = await fetch(`${API_URL}/ranking`, {
         method: 'POST',
         headers: { 'Content-Type' : 'application/json' },
-        body: JSON.stringify({uuid, enunciado, resposta_usuario}),
-    
-        })
+        body: JSON.stringify({nome, pontos, dificuldade})
+    })
 
-        if(!response.ok) throw new Error('Houve um erro ao registrar resposta')
-        
-        const data = await response.json()
-        if(data.resposta.correta==true) {acertos++}
+    if(!response.ok) throw new Error(`Houve um erro ao adicionar usuario: ${response.status}`)
+    
+    const data = await response.json()
+    
+    return data.added
+}
+
+export async function mockadoBuscarusuarios(): Promise <Ranking>{
+    return {
+    'facil': [{nome: 'davi', pontos: 20}],
+    'medio': [{nome: 'gustavo', pontos: 30}],
+    'dificil': [{nome: 'matheus', pontos: 40}],
+    'impossivel': [{nome: 'ana', pontos: 50}],
+    'misto': [{nome: 'eduardo', pontos: 10}]
     }
-    return acertos
 }

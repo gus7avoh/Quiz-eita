@@ -1,0 +1,17 @@
+.git
+.gitignore
+.vscode
+venv
+.venv
+__pycache__
+*.py[cod]
+*.log
+*.env
+**/.env
+node_modules
+**/node_modules
+interface-quiz/dist
+*.local
+*.pem
+*.key
+eita-rag-b1b0272909ff.json

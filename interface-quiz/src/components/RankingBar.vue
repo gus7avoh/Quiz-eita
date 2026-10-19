@@ -1,17 +1,86 @@
 <script lang="ts" setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { Ranking, Usuario } from '../types/QuizTypes';
+import { mockadoBuscarusuarios } from '../service/QuizService';
 
-const ranking: string[] = [
-    "Gustavo",
-    "Guilherme",
-    "Matheus",
-    "Thiago",
-    "Vitor",
-    "Nayara",
-]
+const lista_ranking = ref<Ranking>({
+    'facil': [],
+    'medio': [],
+    'dificil': [],
+    'impossivel': [],
+    'misto': []
+})
+
+const lista_atual = ref<Usuario[] | null> ([{'nome': 'davi', 'pontos': 20}])
+let timer: ReturnType<typeof setInterval> | undefined
+
+
+async function carregarRanking() {
+
+    try{
+        lista_ranking.value = await mockadoBuscarusuarios()
+
+    } catch (error) {
+        console.error('Erro ao buscar ranking:', error)
+    }
+}
+
+onMounted(() => {
+
+    carregarRanking()
+    timer = setInterval(async () => {
+        
+        await adicionarUsuariosAleatorios()
+        await organizarLista()
+    }, 10_000)
+    
+})
+
+onUnmounted(() => {clearInterval(timer)})
+
+function mudarLista(ranking_dificuldade: string) {
+    switch(ranking_dificuldade) {
+
+        case 'facil':
+            lista_atual.value=lista_ranking.value.facil
+            break
+
+        case 'medio':
+            lista_atual.value=lista_ranking.value.medio
+            break
+
+        case 'dificil':
+            lista_atual.value=lista_ranking.value.dificil
+            break
+
+        case 'impossivel':
+            lista_atual.value=lista_ranking.value.impossivel
+            break
+
+        case 'misto':
+            lista_atual.value=lista_ranking.value.misto
+            break
+    }
+}
+async function adicionarUsuariosAleatorios() {
+    lista_ranking.value.facil.push({nome: 'kratos', pontos: Math.floor(Math.random() * 100)})
+        lista_ranking.value.medio.push({nome: 'Allay', pontos: Math.floor(Math.random() * 100)})
+        lista_ranking.value.dificil.push({nome: 'Steve', pontos: Math.floor(Math.random() * 100)})
+        lista_ranking.value.impossivel.push({nome: 'madagascar', pontos: Math.floor(Math.random() * 100)})
+        lista_ranking.value.misto.push({nome: 'Minto', pontos: Math.floor(Math.random() * 100)})
+}
+async function organizarLista() {
+    lista_ranking.value.facil.sort((a, b) => b.pontos - a.pontos)
+    lista_ranking.value.medio.sort((a, b) => b.pontos - a.pontos)
+    lista_ranking.value.dificil.sort((a, b) => b.pontos - a.pontos)
+    lista_ranking.value.impossivel.sort((a, b) => b.pontos - a.pontos)
+    lista_ranking.value.misto.sort((a, b) => b.pontos - a.pontos)
+}
 
 </script>
 
 <template>
+    
     <section class="side-bar">
 
         <div class="title">
@@ -19,43 +88,50 @@ const ranking: string[] = [
             <div class="radio-input">
 
                 <label class="label">
-                    <input type="radio" name="value-radio" />
+                    <input type="radio" name="value-radio" @click="mudarLista('facil')"/>
                     <span class="check"></span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" />
+                    <input type="radio" name="value-radio"  @click="mudarLista('medio')"/>
                     <span class="check"></span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" />
+                    <input type="radio" name="value-radio" @click="mudarLista('dificil')"/>
                     <span class="check"></span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" />
+                    <input type="radio" name="value-radio" @click="mudarLista('impossivel')"/>
                     <span class="check"></span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" />
+                    <input type="radio" name="value-radio" @click="mudarLista('misto')"/>
                     <span class="check"></span>
                 </label>
 
             </div>
-
+            
             <h1>Ranking</h1>
 
         </div>
 
-        <div v-for="(player, index) in ranking"
+        <!-- <div v-for="(player, index) in ranking"
             :key="player"
             class="ranking-item"
             :class="index % 2 === 0 ? 'light' : 'dark'"
         >
             {{ player }}
-        </div>
+        </div> -->
+
+        <div v-for="(Usuario, index) in lista_atual"
+        class="ranking-item"
+        :class="index % 2 === 0 ? 'light' : 'dark'"
+        >
+            {{ Usuario.nome }} {{ Usuario.pontos }}
+        </div> 
 
     </section>
 </template>

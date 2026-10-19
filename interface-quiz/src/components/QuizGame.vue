@@ -2,7 +2,8 @@
 
     import { ref, computed } from 'vue'
     import { responderQuiz } from '../service/QuizService';
-    import type { Pergunta, RespostaRequest } from '../types/QuizTypes'
+    import { EnumQuizGame } from '../types/QuizTypes'
+    import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse} from '../types/QuizTypes'
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
     //Resposta = { enunciado: string, resposta: string }
@@ -11,107 +12,104 @@
 const props = defineProps < { 
     perguntas: Pergunta[] 
     uuid: string
+    dificuldade: string
     } > ()
 
-const emit = defineEmits< { (e: 'voltarMenu'): void } > ()
-    
+const emit = defineEmits< { (e: 'voltarMenu', usuario: Usuario): void } > ()
+
+const estadoQuiz = ref<EstadoQuiz>(EnumQuizGame.respondendo)
+const respostaResponse = ref<RespostaResponse | null>(null)
 const indice = ref(0)
-const alternativaSelecionada = ref<string | null> (null) 
-
-    //muda a pergunta atual automaticamente conforme indice muda
+//muda a pergunta atual automaticamente conforme indice muda
 const perguntaAtual = computed( () => props.perguntas[indice.value] ) 
-
-const respostasDoUsuario : RespostaRequest = { uuid: props.uuid, respostas:[] }
-const acertos = ref<number | null>(null)
-
-const terminou = computed(() => indice.value >= props.perguntas.length)
-const respostasEnviadas = ref(false)
+const alternativaSelecionada = ref<string | null> (null) 
+const acertos = ref<number>(0)
+const nomeUsuario = ref('')
 const erro = ref('')
 
-function selecionarAlternativa(alternativa: string) {
-    alternativaSelecionada.value=alternativa
-}
 
-function proximaQuestao() {
-    respostasDoUsuario.respostas.push ({
-        enunciado: perguntaAtual.value.enunciado, 
-        resposta: alternativaSelecionada.value!
-    })
+async function enviarResposta() {
 
-    indice.value++
-    alternativaSelecionada.value=null
-}
-
-function voltarQuestao() {
-    indice.value--
-    alternativaSelecionada.value=null
-    respostasDoUsuario.respostas.pop()
-
-}
-
-async function mandarRespostas() {
-    erro.value = ''
-    respostasEnviadas.value=true
+    const respostaRequest: RespostaRequest = ({uuid: props.uuid, 'enunciado': perguntaAtual.value.enunciado, 'resposta_usuario': alternativaSelecionada.value!})
 
     try {
-        const response = await responderQuiz(respostasDoUsuario)
-        acertos.value = response
+        respostaResponse.value = await responderQuiz(respostaRequest)
+        if(respostaResponse.value.correta) {
+            acertos.value++
+        }
     }
     catch(e) {
         console.error(e)
-        erro.value='Erro ao mandar respostas'
-        respostasEnviadas.value = false
+        erro.value='Houve um erro ao responder o quiz, tente novamente'
+        }
+    
+}
 
+function proximaQuestao() {
+    
+    if(indice.value < props.perguntas.length - 1) {
+        indice.value++
+        alternativaSelecionada.value = null
+        respostaResponse.value = null
     }
-
+    else {
+        estadoQuiz.value = EnumQuizGame.resultado
+    }
 }
 
 </script>
 
 <template>
+    <div v-if="estadoQuiz === 'RESPONDENDO'">
+        <p>Pergunta {{ indice+1 }} de {{ perguntas.length }}</p>
+    
+        <fieldset>
 
-    <div v-if="!terminou">
-            <p>Pergunta {{ indice+1 }} de {{ perguntas.length }}</p>
-            <h3>{{ perguntaAtual.enunciado }}</h3>
-        
-        <ul>
+            <legend>{{ perguntaAtual.enunciado }}</legend>
+            
+            <label v-for="alternativa in perguntaAtual.alternativas" :key="alternativa">
 
-            <li v-for="alternativa in perguntaAtual.alternativas" :key="alternativa">
-
-                <button
-                :class="{marcada: alternativa === alternativaSelecionada}"
-                @click="selecionarAlternativa(alternativa)"
-                >
+                <input
+                type="radio"
+                name="alternativa"
+                :value="alternativa"
+                v-model="alternativaSelecionada"
+                />
                 {{ alternativa }}
-                </button>
 
-                
-            </li>
+            </label>
 
-        </ul>
-        <button v-if="indice>=1" @click="voltarQuestao">Voltar</button>
-        <button :disabled="!alternativaSelecionada" @click="proximaQuestao">Próxima</button>
+            <button :disabled="!alternativaSelecionada" @click="enviarResposta">Responder</button>
+            <p v-if="erro">{{ erro }}</p>
 
-    </div>
+        </fieldset>
 
-    <!--Usuario terminou todas as perguntas do quiz-->
-    <div v-else>
+        <div v-if="respostaResponse">
 
-        <button v-if="acertos === null" :disabled="respostasEnviadas" @click="mandarRespostas">
-            mandar respostas
-        </button>
-        
-        <p v-if="erro">{{ erro }}</p>
-        <div v-else-if="respostasEnviadas">
-            <p>{{ acertos === null ? 'Corrigindo...' : `Quantidade de acertos: ${acertos}`  }}</p>
-            <button @click="emit('voltarMenu')">
-                Voltar para menu
-            </button>
+            <div v-if="respostaResponse.correta===true">
+                <p>Você acertou!</p>
+            </div>
 
+            <div v-else>
+                <p>Você errou!</p>
+            </div>
+
+            <p>Explicação: {{ respostaResponse.explicacao }}</p>
+            <button @click="proximaQuestao">Próxima</button>
         </div>
 
+        
     </div>
 
+    <div v-else-if="estadoQuiz === 'RESULTADO'">
+        <p>Você terminou o quiz!</p>
+        <p>Quantidade de acertos: {{ acertos }}</p>
+        <input v-model="nomeUsuario" placeholder="Digite seu nome para o ranking"/>
+        <button :disabled="!nomeUsuario.trim()" @click="emit('voltarMenu', {nome: nomeUsuario, pontos: acertos})">
+            Enviar e voltar para menu
+        </button>
+    </div>
+ 
 </template>
 
 <style scoped>

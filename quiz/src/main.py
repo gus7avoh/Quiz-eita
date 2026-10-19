@@ -71,30 +71,7 @@ if __name__ == "__main__":
 #      await repository.delete("quiz:test")
 
 
-<<<<<<< HEAD
 # asyncio.run(main())
-=======
-#     asyncio.run(test_redis())
-
-
-# if __name__ == "__main__":
-#     main()
-
-
-
-
-import asyncio
-
-from infra.repository.redis_client import RedisClient
-from infra.repository.quiz_repository import QuizRepository
-from app.graph.node.retrive_context import retrieve_context
-
-async def main():
-    
-    await retrieve_context({"context": []})
-
-asyncio.run(main())
->>>>>>> 389ffb8e622b183c44c946be14181e9f63505c71
 
 
 

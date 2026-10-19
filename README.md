@@ -1,128 +1,116 @@
 # Quiz-eita
 
-API para criação e aplicação de quizzes usando inteligência artificial. O projeto foi criado para o encontro de tecnologia da Faculdade Anhanguera e gera perguntas a partir de um tema, uma quantidade e um nível de dificuldade informados pelo cliente.
+Aplicação web para criação e aplicação de quizzes com perguntas geradas pelo Google Gemini. O projeto reúne um frontend Vue/Vite e uma API FastAPI no mesmo repositório. Em produção, o Dockerfile compila o frontend e faz o FastAPI servir a interface e as rotas HTTP pelo mesmo domínio.
 
-## Objetivo
+## O que é o Quiz-eita?
 
-O Quiz-eita recebe os parâmetros de um quiz, solicita ao Google Gemini perguntas em formato estruturado e disponibiliza o resultado por uma API HTTP. A geração acontece em segundo plano: a rota de criação responde rapidamente com um identificador, enquanto o processamento continua de forma assíncrona. O resultado e o estado do processamento ficam armazenados no Redis.
+O Quiz-eita transforma um tema escolhido pelo usuário em um jogo de perguntas. A pessoa informa sobre o que quer ser avaliada, escolhe o nível de dificuldade e espera a inteligência artificial preparar o quiz. Depois responde às perguntas na tela e recebe a quantidade de acertos.
 
-O projeto oferece recursos para:
+O projeto foi criado para o encontro integrador de tecnologia da Faculdade Anhanguera. Ele combina uma interface web simples para jogar com um serviço que gera as perguntas, guarda o progresso e usa documentos de apoio quando esse conteúdo está disponível.
 
-- criar um quiz com tema, quantidade e dificuldade;
-- consultar as perguntas depois que a geração terminar;
-- enviar uma resposta e receber a alternativa correta, o indicador de acerto e a explicação;
-- excluir um ou vários quizzes do Redis;
-- verificar se a API está disponível por meio de um health check.
+### Como uma pessoa usa a aplicação
 
-Os temas possuem prompts específicos para Python, Java, JavaScript, C#, filmes, jogos, músicas e pessoas famosas. Qualquer outro tema também pode ser enviado; nesse caso, é usado somente o prompt geral.
+1. A pessoa informa um tema, como `Python`, `cinema` ou `história do Brasil`.
+2. Escolhe uma dificuldade: fácil, médio, difícil, impossível ou misto.
+3. Clica em **Criar quiz**. A aplicação mostra que a geração está em andamento.
+4. Quando as perguntas ficam prontas, a interface apresenta uma pergunta por vez, com suas alternativas.
+5. A pessoa pode avançar e voltar entre as perguntas antes de enviar as respostas.
+6. Ao terminar, clica para enviar as respostas e vê a quantidade de acertos.
+7. Pode voltar ao menu e criar outro quiz.
 
-## Como o processamento funciona
+O fluxo é assíncrono: o servidor cria um identificador imediatamente e prepara as perguntas em segundo plano. Por isso, a tela consulta o servidor algumas vezes enquanto aguarda o resultado.
 
-1. `POST /quiz/create` gera um UUID e grava `quiz:<uuid>` no Redis com status `processing`.
-2. Uma tarefa em segundo plano executa o grafo LangGraph e chama o Gemini com saída estruturada no modelo `Quiz`.
-3. Quando a geração termina, o Redis recebe o quiz e o status `completed`. Em caso de erro, o status passa para `failed` e o erro é armazenado.
-4. `POST /quiz/question` e `POST /quiz/answer` só retornam dados quando o status é `completed`. Enquanto o quiz está sendo gerado, a resposta é `null`.
+### O que já está disponível e o que é demonstrativo
 
-## Arquitetura do projeto
+- O fluxo de criação, geração, resposta e correção do quiz é o recurso principal e está ligado à API.
+- A área de ranking aparece na interface, mas os nomes atuais são fixos no código. Ela ainda não representa pontuações salvas no servidor.
+- Há botões de teste de fala e escuta no frontend. O reconhecimento de voz depende do navegador, da permissão do microfone e de HTTPS ou `localhost`; ele ainda funciona como recurso auxiliar de teste.
+
+## Funcionalidades
+
+- criação assíncrona de quizzes por tema, quantidade e dificuldade;
+- consulta das perguntas depois que a geração termina;
+- correção de respostas e retorno da alternativa correta e da explicação;
+- exclusão de um ou vários quizzes;
+- geração com contexto documental armazenado no Redis;
+- sincronização de documentos do Google Drive para o cache RAG;
+- reconhecimento de voz no navegador;
+- endpoint de saúde e documentação OpenAPI.
+
+A criação retorna um UUID imediatamente. A geração continua em segundo plano e grava o estado no Redis como `processing`, `completed` ou `failed`.
+
+## Estrutura
 
 ```text
-quiz-eita/
+Quiz-eita/
+├── Dockerfile
+├── requirements.txt
+├── start.ps1
+├── README.md
 ├── quiz/
-│   ├── .env                         # chaves do Gemini e URL do Redis (não versionar)
 │   └── src/
 │       ├── app/
-│       │   ├── graph/               # grafo LangGraph e nós de geração
-│       │   └── prompts/             # prompt geral e prompts por tema
-│       ├── domain/
-│       │   └── entities/quiz.py     # modelos Pergunta e Quiz (Pydantic)
+│       │   ├── graph/              # fluxo LangGraph da geração
+│       │   └── prompts/            # prompts gerais e por tema
+│       ├── domain/                 # entidades Pydantic e regras de domínio
 │       ├── infra/
-│       │   ├── llm/                 # cliente Gemini e rotação de chaves
-│       │   └── repository/           # cliente e repositório Redis
-│       ├── presentation/
-│       │   ├── http/                # aplicação FastAPI, rotas, schemas e serviços
-│       │   └── cli/                 # espaço reservado para a interface CLI
-│       └── main.py                  # código de teste do repositório Redis
-├── requirements.txt                 # dependências Python fixadas
-├── start.ps1                        # atalho legado para iniciar o servidor
-├── venv/                            # ambiente virtual local (criado pelo desenvolvedor)
-└── README.md
+│       │   ├── document/           # extração e tratamento de documentos
+│       │   ├── llm/                # Gemini, embeddings e gerenciamento de chaves
+│       │   └── repository/         # Redis e Google Drive
+│       └── presentation/
+│           ├── http/               # FastAPI, rotas, schemas e serviços
+│           └── cli/
+├── interface-quiz/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── index.html
+│   └── src/                        # aplicação Vue/TypeScript
+│       ├── components/             # telas e partes visuais do quiz
+│       ├── service/                # chamadas HTTP para a API
+│       ├── types/                  # tipos das requisições e respostas
+│       └── speechRecognitionService.ts
+└── venv/                           # ambiente local, não versionado
 ```
 
-A aplicação ASGI está em `quiz/src/presentation/http/main.py`. O módulo expõe o objeto `app` e registra as rotas de `presentation.http.routes.quiz`.
+Os manifests Node ficam em `interface-quiz/`. Não há `package.json` nem `package-lock.json` na raiz. O ambiente Python usa `requirements.txt` na raiz.
+
+A aplicação ASGI está em `quiz/src/presentation/http/main.py`, no objeto `app`. O comando precisa apontar `--app-dir .\quiz\src` quando executado a partir da raiz.
 
 ## Pré-requisitos
 
-- Windows com PowerShell (os comandos abaixo também podem ser adaptados para Linux/macOS);
-- Python 3.11 ou superior. O ambiente usado no desenvolvimento deste repositório é Python 3.11.0;
-- pip atualizado;
-- um servidor Redis acessível pela aplicação;
-- uma ou mais chaves de API do Google Gemini.
+- Python 3.11 ou superior;
+- Node.js 22 ou superior para desenvolvimento/build do frontend;
+- npm;
+- um servidor Redis acessível;
+- uma ou mais chaves válidas do Google Gemini;
+- credenciais de serviço do Google Drive quando a sincronização documental for usada;
+- Docker Desktop, caso queira executar a imagem localmente.
 
-Confira a versão instalada antes de começar:
+## Configurar o ambiente Python
 
-```powershell
-py --version
-python --version
-```
-
-## Criar a `venv`
-
-A `venv` deve ficar na raiz do projeto, no mesmo nível de `requirements.txt` e da pasta `quiz`:
-
-```text
-C:\cod\Quiz-eita\venv
-```
-
-A partir da raiz do repositório, crie o ambiente com o Python 3.11:
+A partir da raiz do projeto:
 
 ```powershell
 cd C:\cod\Quiz-eita
 py -3.11 -m venv .\venv
-```
-
-Ative-o no PowerShell:
-
-```powershell
 .\venv\Scripts\Activate.ps1
 ```
 
-Se a política de execução do PowerShell bloquear a ativação, libere somente a sessão atual e tente novamente:
+Se a política do PowerShell impedir a ativação, libere somente a sessão atual:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\venv\Scripts\Activate.ps1
 ```
 
-É possível usar a `venv` sem ativá-la, chamando diretamente `venv\Scripts\python.exe`. Essa forma é usada nos comandos de execução abaixo e evita depender do estado do terminal.
-
-## Instalar todas as dependências
-
-Com a `venv` ativa (ou usando o executável dela diretamente), atualize o pip e instale o arquivo de dependências:
-
-```powershell
-cd C:\cod\Quiz-eita
-python -m pip install --upgrade pip
-python -m pip install -r .\requirements.txt
-```
-
-Sem ativar o ambiente virtual:
+Instale as dependências:
 
 ```powershell
 .\venv\Scripts\python.exe -m pip install --upgrade pip
 .\venv\Scripts\python.exe -m pip install -r .\requirements.txt
 ```
 
-As dependências principais são:
-
-- **FastAPI** e **Uvicorn**: API HTTP e servidor ASGI;
-- **Pydantic**: validação dos requests e das perguntas geradas;
-- **LangGraph** e **LangChain**: orquestração do fluxo de geração;
-- **langchain-google-genai**: integração com o Gemini;
-- **python-dotenv**: carregamento das variáveis do arquivo `.env`;
-- **redis**: cliente assíncrono para persistência dos quizzes;
-- **pytest**: suporte a testes automatizados.
-
-Para confirmar a instalação básica:
+Confirme que FastAPI e o servidor ASGI estão instalados na mesma virtualenv usada para iniciar a aplicação:
 
 ```powershell
 .\venv\Scripts\python.exe -c "import fastapi, uvicorn, redis, langgraph, langchain_google_genai; print('Dependências carregadas com sucesso')"
@@ -130,51 +118,60 @@ Para confirmar a instalação básica:
 
 ## Configurar variáveis de ambiente
 
-Crie ou edite o arquivo:
+Crie o arquivo `C:\cod\Quiz-eita\.env` somente para o desenvolvimento local. Ele é carregado a partir da raiz do projeto, independentemente do diretório atual do processo.
 
-```text
-C:\cod\Quiz-eita\quiz\.env
-```
-
-Use o seguinte formato e substitua os valores pelas suas credenciais:
+Exemplo sem credenciais reais:
 
 ```dotenv
 REDIS_URL=redis://localhost:6379/0
+REDIS_URL_RAG=redis://localhost:6379/1
+
 EITA_1=sua-chave-do-gemini-1
 EITA_2=sua-chave-do-gemini-2
+
+GOOGLE_DRIVE_FOLDER_ID=id-da-pasta
+GOOGLE_DRIVE_CREDENTIALS_NAME=eita-rag-b1b0272909ff.json
+
+# Necessário somente quando o frontend estiver em outra origem
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 ```
 
-O código lê `REDIS_URL` e as chaves `EITA_1`, `EITA_2`, `EITA_4`, `EITA_5`, `EITA_6`, `EITA_7`, `EITA_8`, `EITA_9` e `EITA_10`. Basta cadastrar uma chave para executar o projeto; as demais são opcionais e permitem alternância quando o Gemini responde com limite `429`. A variável `EITA_3` não é usada pelo gerenciador de chaves atual.
+Variáveis usadas:
 
-Não compartilhe nem faça commit desse arquivo. O `.gitignore` já ignora arquivos `.env`.
+| Variável | Finalidade |
+|---|---|
+| `REDIS_URL` | estados dos quizzes e resultados |
+| `REDIS_URL_RAG` | documentos, embeddings e contexto RAG |
+| `EITA_1` até `EITA_58` | chaves disponíveis para o Gemini; pelo menos uma é necessária |
+| `GOOGLE_DRIVE_FOLDER_ID` | pasta de documentos usada na sincronização |
+| `GOOGLE_DRIVE_CREDENTIALS_NAME` | caminho do JSON da conta de serviço do Google Drive |
+| `CORS_ORIGINS` | origens permitidas quando frontend e API estão em domínios diferentes |
 
-## Iniciar o Redis
+As chaves `EITA_1` até `EITA_58` são opcionais individualmente. Cadastre apenas as que existirem. Nunca publique valores reais no README, no Git ou em logs.
 
-O pacote Python `redis` é apenas o cliente; é necessário executar um servidor Redis. Com o Docker Desktop instalado, uma forma simples de iniciar uma instância local é:
+O arquivo de credenciais do Google Drive e os arquivos `.env` estão no `.gitignore`. A variável `GOOGLE_DRIVE_CREDENTIALS_NAME` pode receber um caminho absoluto, como `/run/secrets/google-drive.json` no container, ou um caminho relativo à raiz em ambiente local.
+
+## Iniciar o Redis local
+
+O pacote Python `redis` é apenas o cliente. É preciso executar um servidor Redis.
+
+Com Docker:
 
 ```powershell
 docker run --name quiz-eita-redis -p 6379:6379 -d redis:7-alpine
 ```
 
-Se o container já existir e estiver parado, inicie-o com:
+Se o container já existir:
 
 ```powershell
 docker start quiz-eita-redis
 ```
 
-O valor `REDIS_URL=redis://localhost:6379/0` usa o banco lógico `0`. Também é possível apontar `REDIS_URL` para uma instância gerenciada ou para outro host, desde que a URL seja compatível com o cliente Redis assíncrono.
+O exemplo usa o banco lógico `0` para os quizzes e o banco `1` para o contexto RAG. É possível usar outra instância ou outros bancos, desde que `REDIS_URL` e `REDIS_URL_RAG` estejam configuradas.
 
-## Rodar o FastAPI
+## Executar a API localmente
 
-Execute os comandos a partir da raiz `C:\cod\Quiz-eita`, depois de configurar `quiz\.env` e iniciar o Redis:
-
-```powershell
-.\venv\Scripts\python.exe -m uvicorn presentation.http.main:app --app-dir .\quiz\src --reload
-```
-
-O servidor ficará disponível em `http://127.0.0.1:8000`. A opção `--app-dir .\quiz\src` é necessária porque o pacote `presentation` está dentro de `quiz/src`.
-
-Para escolher host e porta explicitamente:
+Com o Redis e o arquivo `.env` configurados, execute a partir de `C:\cod\Quiz-eita`:
 
 ```powershell
 .\venv\Scripts\python.exe -m uvicorn presentation.http.main:app `
@@ -184,11 +181,22 @@ Para escolher host e porta explicitamente:
   --reload
 ```
 
-O arquivo `start.ps1` é um atalho legado e pressupõe execução a partir de `quiz`. Para evitar ambiguidade de diretório e garantir o interpretador da `venv`, use o comando acima a partir da raiz.
+O servidor ficará disponível em:
+
+- API: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+- OpenAPI: `http://127.0.0.1:8000/openapi.json`
+
+O script [start.ps1](start.ps1) executa o mesmo servidor usando automaticamente `venv\Scripts\python.exe` e a pasta `quiz\src`:
+
+```powershell
+.\start.ps1
+```
+
+Não use `--reload` em produção.
 
 ### Verificar a API
-
-Em outro terminal:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/health
@@ -200,17 +208,112 @@ Resposta esperada:
 {"status":"ok"}
 ```
 
-Documentação interativa gerada pelo FastAPI:
+## Frontend
 
-- Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- ReDoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-- OpenAPI: [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
+O frontend fica em `interface-quiz/` e é uma aplicação Vue 3 escrita em TypeScript, com Vite para desenvolvimento e build. Ele cuida da experiência de quem está jogando: coleta o tema e a dificuldade, acompanha a geração, exibe as perguntas e envia as respostas para a API.
 
-## API HTTP
+### Telas e componentes
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `src/App.vue` | ponto de entrada visual; monta a página do quiz e a área de teste de voz |
+| `src/components/FrontPage.vue` | organiza o título, o ranking lateral e a área principal do jogo |
+| `src/components/SelectGame.vue` | formulário de tema e dificuldade, criação do quiz e espera pelas perguntas |
+| `src/components/QuizGame.vue` | exibe uma pergunta por vez, permite voltar ou avançar e envia as respostas |
+| `src/components/RankingBar.vue` | apresenta o ranking visual atual, que ainda usa nomes fixos |
+| `src/service/QuizService.ts` | concentra as chamadas HTTP para criar, consultar, responder e excluir quizzes |
+| `src/types/QuizTypes.ts` | descreve em TypeScript o formato dos dados trocados com a API |
+| `src/speechRecognitionService.ts` | encapsula fala do navegador e reconhecimento de voz |
+| `src/testeVoz.vue` | oferece os botões de teste de fala e escuta |
+
+### O que acontece no frontend
+
+- Ao clicar em **Criar quiz**, `SelectGame.vue` envia tema, dificuldade e a quantidade `5` para `POST /quiz/create`.
+- O servidor devolve um UUID. A tela consulta `POST /quiz/question` a cada dois segundos, por no máximo vinte tentativas.
+- Quando as perguntas chegam, `QuizGame.vue` guarda a alternativa marcada para cada pergunta. A navegação permite voltar e corrigir uma escolha antes do envio.
+- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta e soma os acertos recebidos.
+- Ao voltar ao menu, a interface chama `DELETE /quiz` para apagar o quiz que estava aberto e limpa o estado local.
+
+Essa separação ajuda a localizar mudanças: aparência e fluxo de tela ficam em `src/components`, formato dos dados fica em `src/types` e integração com o servidor fica em `src/service`.
+
+### Desenvolvimento do frontend
+
+O frontend tem seus próprios manifests em `interface-quiz/`:
+
+```powershell
+cd C:\cod\Quiz-eita\interface-quiz
+npm ci
+npm run dev
+```
+
+Por padrão, o Vite usa a porta `5173`. Para apontar o frontend local para a API local, crie `interface-quiz/.env.local`:
+
+```dotenv
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+Depois abra o endereço exibido pelo Vite, normalmente:
+
+```text
+http://localhost:5173
+```
+
+O frontend usa `/quiz/create`, `/quiz/question`, `/quiz/answer` e `/quiz`. Em produção no mesmo container, `VITE_API_URL` deve ficar vazio para que o navegador use a mesma origem.
+
+Para gerar os arquivos estáticos:
+
+```powershell
+cd C:\cod\Quiz-eita\interface-quiz
+npm run build
+```
+
+O comando `npm run build` executa a verificação de tipos com `vue-tsc` e depois gera os arquivos finais em `interface-quiz/dist/`. O Dockerfile usa esse mesmo build e copia o resultado para a imagem Python.
+
+Para alterar a interface, edite o componente correspondente, rode `npm run build` e abra a aplicação com `npm run dev` para conferir o resultado. Para alterar o formato de uma chamada, atualize em conjunto o tipo em `src/types/QuizTypes.ts`, o método em `src/service/QuizService.ts` e a rota FastAPI correspondente.
+
+### Onde fazer cada tipo de mudança
+
+| Se você quer... | Comece por... |
+|---|---|
+| mudar cores, textos ou a disposição da página | `interface-quiz/src/components/` e os estilos do componente |
+| mudar o formulário ou a quantidade de perguntas exibidas | `interface-quiz/src/components/SelectGame.vue` |
+| mudar a navegação, alternativas ou resultado | `interface-quiz/src/components/QuizGame.vue` |
+| alterar uma chamada feita pelo navegador | `interface-quiz/src/service/QuizService.ts` |
+| alterar o formato de um request ou response | `interface-quiz/src/types/QuizTypes.ts` e os schemas em `quiz/src/presentation/http/schemas/` |
+| criar ou alterar uma rota | `quiz/src/presentation/http/routes/` e o serviço correspondente |
+| mudar como as perguntas são geradas | `quiz/src/app/graph/`, `quiz/src/app/prompts/` e `quiz/src/infra/llm/` |
+| alterar a imagem publicada | `Dockerfile` e as configurações do Dokploy |
+
+### Configuração da URL da API
+
+`VITE_API_URL` é lida durante o build do frontend:
+
+- vazia ou ausente: usa a mesma origem da página, indicado para o Docker e para produção com um domínio único;
+- `http://127.0.0.1:8000`: usa uma API FastAPI iniciada separadamente durante o desenvolvimento;
+- outro domínio: exige que a API permita a origem em `CORS_ORIGINS`.
+
+Como as variáveis `VITE_*` entram nos arquivos públicos gerados, nunca coloque chaves secretas nelas. Elas servem apenas para configurações que podem ser conhecidas pelo navegador, como uma URL pública.
+
+O reconhecimento de voz do navegador exige HTTPS ou `localhost`. Por isso, ele funciona no desenvolvimento em `localhost` e no domínio HTTPS configurado em produção.
+
+## Rodar o projeto completo localmente
+
+Para testar a experiência inteira, use três terminais abertos na raiz do projeto:
+
+1. Inicie o Redis com `docker start quiz-eita-redis` ou crie o container conforme a seção de Redis.
+2. No segundo terminal, configure o `.env` e execute a API com `.\start.ps1`.
+3. No terceiro terminal, execute `cd C:\cod\Quiz-eita\interface-quiz`, `npm ci` (na primeira vez) e `npm run dev`.
+4. Abra `http://localhost:5173` e crie um quiz. O navegador usará `VITE_API_URL` para encontrar a API.
+
+O terminal da API precisa permanecer aberto enquanto o frontend estiver sendo usado. Para encerrar o desenvolvimento, pare o servidor com `Ctrl+C`; o Redis pode continuar parado com `docker stop quiz-eita-redis`.
+
+## Contrato da API
 
 ### `GET /health`
 
 Verifica se o processo FastAPI está ativo.
+
+Resposta:
 
 ```json
 {"status":"ok"}
@@ -218,7 +321,7 @@ Verifica se o processo FastAPI está ativo.
 
 ### `POST /quiz/create`
 
-Inicia a geração de um quiz e retorna o UUID imediatamente.
+Inicia a geração e retorna o UUID.
 
 Request:
 
@@ -230,43 +333,25 @@ Request:
 }
 ```
 
-Exemplo PowerShell:
-
-```powershell
-$body = @{
-  tema = "python"
-  quantidade = 5
-  dificuldade = "mista"
-} | ConvertTo-Json
-
-$criado = Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:8000/quiz/create `
-  -ContentType "application/json" `
-  -Body $body
-
-$criado
-```
-
 Resposta:
 
 ```json
-{"uuid":"código-gerado"}
+{"uuid":"codigo-gerado"}
 ```
 
-`tema` e `dificuldade` precisam ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
+`tema` e `dificuldade` devem ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
 
 ### `POST /quiz/question`
 
-Consulta as perguntas de um quiz concluído:
+Consulta as perguntas de um quiz:
 
 ```json
 {
-  "uuid": "código-gerado"
+  "uuid": "codigo-gerado"
 }
 ```
 
-Quando o quiz está pronto:
+Quando o quiz está concluído:
 
 ```json
 {
@@ -279,21 +364,21 @@ Quando o quiz está pronto:
 }
 ```
 
-Durante `processing`, ou quando o quiz está em `failed`, a rota retorna `null`. As alternativas são embaralhadas antes da resposta, portanto a ordem pode mudar entre consultas.
+Enquanto o quiz estiver em `processing` ou tiver falhado, a rota retorna `null`. As alternativas podem ser embaralhadas antes da resposta.
 
 ### `POST /quiz/answer`
 
-Corrige uma resposta pelo texto exato do enunciado:
+Corrige uma resposta pelo texto do enunciado:
 
 ```json
 {
-  "uuid": "código-gerado",
+  "uuid": "codigo-gerado",
   "enunciado": "Qual estrutura é usada para criar uma lista em Python?",
   "resposta_usuario": "[]"
 }
 ```
 
-Resposta quando o enunciado é encontrado:
+Resposta:
 
 ```json
 {
@@ -305,17 +390,17 @@ Resposta quando o enunciado é encontrado:
 }
 ```
 
-Assim como em `/quiz/question`, a resposta é `null` enquanto o quiz não estiver concluído. Se o enunciado não existir no quiz, a rota também não encontra uma resposta.
+A resposta é `null` enquanto o quiz não estiver concluído ou quando o enunciado não for encontrado.
 
-### `DELETE /quiz/delete`
+### `DELETE /quiz`
 
-Exclui um ou mais quizzes do Redis:
+Exclui um ou mais quizzes. O corpo da requisição é:
 
 ```json
 {
   "list_uuid": [
-    {"uuid": "código-gerado"},
-    {"uuid": "outro-código"}
+    {"uuid": "codigo-gerado"},
+    {"uuid": "outro-codigo"}
   ]
 }
 ```
@@ -323,55 +408,212 @@ Exclui um ou mais quizzes do Redis:
 Resposta:
 
 ```json
-{"excluded": true}
+{"excluded":true}
 ```
 
-## Estados armazenados no Redis
+## Estados e armazenamento no Redis
 
 Cada quiz usa a chave `quiz:<uuid>`:
 
 - `processing`: UUID criado e geração em andamento;
 - `completed`: perguntas geradas e salvas no campo `quiz`;
-- `failed`: geração ou leitura falhou e o campo `error` contém a mensagem.
+- `failed`: ocorreu erro e o campo `error` registra a falha.
 
-Para inspecionar chaves em desenvolvimento, prefira `SCAN` a `KEYS`:
+Para inspeção local, prefira `SCAN` a `KEYS`:
 
 ```powershell
-docker exec quiz-eita-redis redis-cli SCAN 0 MATCH "quiz:*" COUNT 100
+docker exec quiz-eita-redis redis-cli -n 0 SCAN 0 MATCH "quiz:*" COUNT 100
 ```
+
+O contexto documental usa `REDIS_URL_RAG`. Mantenha o banco RAG separado do banco dos quizzes quando a instância Redis for compartilhada.
+
+## Contexto documental e Google Drive
+
+O grafo de geração executa estas etapas:
+
+1. inicia ou mantém o processo de sincronização do Google Drive;
+2. procura no Redis RAG o contexto relacionado ao tema;
+3. gera as perguntas com o Gemini usando esse contexto;
+4. salva o quiz no Redis principal.
+
+Para a sincronização, a conta de serviço precisa ter acesso de leitura à pasta indicada por `GOOGLE_DRIVE_FOLDER_ID`. O JSON da conta de serviço não deve ser copiado para a imagem Docker nem enviado ao repositório.
 
 ## Testes e validações locais
 
-Não há uma suíte de testes no repositório neste momento. É possível validar a importação da aplicação e a configuração da API com:
+O repositório não possui uma suíte automatizada completa. Execute pelo menos estas verificações antes de publicar:
 
 ```powershell
+cd C:\cod\Quiz-eita
+
 .\venv\Scripts\python.exe -c "import sys; sys.path.insert(0, 'quiz/src'); from presentation.http.main import app; print(app.title)"
+
+cd .\interface-quiz
+npm ci
+npm run build
 ```
 
-Com Redis, chaves do Gemini e o servidor FastAPI ativos, use `/health` e os exemplos das rotas acima para fazer um teste manual completo.
+Com Redis, as variáveis e as credenciais configuradas, valide também `/health` e o fluxo das rotas descritas acima. A importação e o build não comprovam conectividade com Redis, Gemini ou Google Drive.
+
+## Deploy com Docker
+
+O [Dockerfile](Dockerfile) usa duas etapas:
+
+1. a imagem Node 22 instala as dependências de `interface-quiz` e executa `npm run build`;
+2. a imagem Python 3.11 instala `requirements.txt`, copia a API e serve o frontend compilado pelo FastAPI.
+
+A imagem final expõe a porta `8000` e inicia:
+
+```text
+uvicorn presentation.http.main:app --app-dir /app/quiz/src --host 0.0.0.0 --port 8000
+```
+
+Teste localmente, com Docker Desktop ativo:
+
+```powershell
+docker build -t quiz-eita:local .
+
+docker run --rm -p 8000:8000 `
+  -e REDIS_URL="redis://host.docker.internal:6379/0" `
+  -e REDIS_URL_RAG="redis://host.docker.internal:6379/1" `
+  -e EITA_1="sua-chave-do-gemini" `
+  quiz-eita:local
+```
+
+Abra:
+
+```text
+http://localhost:8000/
+http://localhost:8000/health
+```
+
+O arquivo `.env` da raiz não é copiado para a imagem. Em um servidor, forneça as variáveis pelo ambiente do container ou pelo recurso de secrets do provedor.
+
+## Deploy no Dokploy
+
+Na aplicação do Dokploy, use:
+
+| Campo | Valor |
+|---|---|
+| Origem | repositório GitHub `Quiz-eita` |
+| Branch | `main` |
+| Build Type | `Dockerfile` |
+| Dockerfile | `Dockerfile` |
+| Context Path | `.` ou `/`, conforme a interface |
+| Stage | `production` |
+| Porta do container | `8000` |
+
+Cadastre os segredos e variáveis no ambiente do Dokploy. Não dependa do `.env` local:
+
+```dotenv
+REDIS_URL=redis://usuario:senha@host:6379/0
+REDIS_URL_RAG=redis://usuario:senha@host:6379/1
+EITA_1=sua-chave-do-gemini-1
+EITA_2=sua-chave-do-gemini-2
+GOOGLE_DRIVE_FOLDER_ID=id-da-pasta
+GOOGLE_DRIVE_CREDENTIALS_NAME=/run/secrets/google-drive.json
+```
+
+Se o frontend e a API usarem o mesmo domínio, não defina `VITE_API_URL`. Se forem domínios diferentes, `VITE_API_URL` precisa estar disponível durante o build do frontend e `CORS_ORIGINS` precisa conter a origem pública do frontend.
+
+### Domínio e HTTPS
+
+Para o domínio atual `quiz-eita.com.br`, o registro DNS deve apontar para o IP público do servidor:
+
+```text
+Tipo: A
+Nome: @ ou vazio
+Valor: 169.58.5.68
+```
+
+Opcionalmente, crie também:
+
+```text
+Tipo: CNAME
+Nome: www
+Valor: quiz-eita.com.br
+```
+
+No domínio do Dokploy, use:
+
+| Campo | Valor |
+|---|---|
+| Host | `quiz-eita.com.br` |
+| Path | `/` |
+| Internal Path | `/` |
+| Strip Path | desligado |
+| Container Port | `8000` |
+| Custom Entrypoint | desligado |
+| HTTPS | ligado |
+| Certificate Provider | Let's Encrypt |
+
+Não use o endereço `sslip.io` para o certificado. Ele é útil para apontamento HTTP, mas não oferece SSL/HTTPS próprio.
+
+Antes de solicitar o certificado, confirme:
+
+```powershell
+Resolve-DnsName quiz-eita.com.br -Type A
+```
+
+O domínio precisa retornar `169.58.5.68`. As portas públicas `80` e `443` também precisam estar acessíveis no servidor para o proxy e o desafio do Let's Encrypt.
+
+Depois do deploy:
+
+```text
+https://quiz-eita.com.br/health
+https://quiz-eita.com.br/
+https://quiz-eita.com.br/docs
+```
+
+A rota `/health` comprova que o processo FastAPI está ativo. A criação de quizzes também depende de Redis, chaves Gemini e, quando usado, Google Drive e Redis RAG.
 
 ## Solução de problemas
 
+### FastAPI não é reconhecido
+
+Use o interpretador da virtualenv explicitamente:
+
+```powershell
+.\venv\Scripts\python.exe -m pip show fastapi
+.\venv\Scripts\python.exe -c "import fastapi; print(fastapi.__version__)"
+```
+
+O `python` global pode apontar para outra instalação sem FastAPI. O Docker instala as dependências a partir de `requirements.txt` dentro da imagem.
+
+### Erro `No module named presentation`
+
+Execute a partir da raiz e inclua o diretório da aplicação:
+
+```powershell
+.\venv\Scripts\python.exe -m uvicorn presentation.http.main:app --app-dir .\quiz\src
+```
+
 ### `REDIS_URL não foi configurada`
 
-Confirme que `quiz/.env` existe, contém uma linha `REDIS_URL=...` não vazia e que o processo foi iniciado com o comando da raiz do projeto. Verifique também se o Redis está em execução e acessível no host e na porta informados.
-
-### Erro de importação de `presentation` ou `domain`
-
-O servidor deve ser iniciado com `--app-dir .\quiz\src` quando o comando é executado em `C:\cod\Quiz-eita`. Iniciar Uvicorn sem esse diretório faz o Python procurar os pacotes no local errado.
+Confirme que a variável existe no ambiente do processo. No Dokploy, cadastre-a nas variáveis da aplicação; o `.env` da sua máquina não é enviado para o container.
 
 ### O quiz permanece em `processing`
 
-Confira os logs do Uvicorn, a conectividade com o Redis e a existência de ao menos uma chave `EITA_*` válida. Falhas do Gemini mudam o estado para `failed`; nesse caso, consulte o log do servidor para identificar a causa.
+Verifique os logs do Uvicorn/Dokploy, a conectividade com `REDIS_URL` e `REDIS_URL_RAG`, a existência de ao menos uma chave `EITA_*` e o processo de sincronização documental.
 
-### Limite de requisições do Gemini (`429`)
+### O domínio abre, mas o HTTPS não é emitido
 
-O `GeminiKeyManager` alterna entre as chaves configuradas. Cadastre mais chaves válidas em `quiz/.env` se a aplicação atingir o limite de uma chave.
+Confirme que:
+
+- o domínio retorna o IP correto em uma consulta DNS pública;
+- o host no Dokploy é o domínio real, sem `http://` e sem `:8000`;
+- a porta interna está como `8000`;
+- as portas públicas `80` e `443` estão liberadas;
+- o provedor de certificado está definido como `Let's Encrypt`.
+
+### O microfone não funciona
+
+O navegador exige contexto seguro para o microfone. Use `localhost` no desenvolvimento ou o domínio HTTPS em produção. Verifique também a permissão de microfone do navegador.
 
 ## Segurança e operação
 
-- mantenha `quiz/.env` fora do controle de versão;
-- não registre nem compartilhe valores de `REDIS_URL` ou das chaves do Gemini;
-- em produção, use Redis com autenticação, TLS e regras de rede adequadas;
-- `--reload` é útil durante o desenvolvimento, mas deve ser desligado em produção;
-- configure um processo supervisor ou um servidor de contêiner para manter o Uvicorn ativo.
+- não versione `.env`, credenciais do Google Drive, certificados ou chaves privadas;
+- não coloque senhas, URLs Redis ou chaves Gemini em logs;
+- use Redis autenticado e protegido por rede em produção;
+- mantenha `--reload` desligado em produção;
+- configure o Dokploy ou outro supervisor para reiniciar o container;
+- após uma alteração de DNS, valide o domínio e o certificado antes de divulgar a URL.
