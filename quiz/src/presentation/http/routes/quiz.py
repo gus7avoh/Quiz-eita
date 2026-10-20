@@ -17,6 +17,7 @@ from presentation.http.services.quiz import delete_quiz as delete_quiz_service
 router = APIRouter(
     prefix="/quiz",
     tags=["quiz"],
+    responses={500: {"description": "Falha ao acessar o Redis ou gerar o quiz."}},
 )
 
 @router.post("/create", response_model=QuizCreatedResponse)

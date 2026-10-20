@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
 import logging
 import os
 from pathlib import Path
@@ -14,6 +16,16 @@ app = FastAPI(
 )
 
 app.include_router(quiz_router)
+
+
+@app.exception_handler(RedisError)
+async def redis_error_handler(request, exc):
+    logging.getLogger(__name__).error("Falha na operação Redis", exc_info=exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Falha ao acessar o Redis. Tente novamente."},
+    )
+
 
 app.add_middleware(
     CORSMiddleware,

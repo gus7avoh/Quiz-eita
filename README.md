@@ -364,7 +364,7 @@ Quando o quiz está concluído:
 }
 ```
 
-Enquanto o quiz estiver em `processing` ou tiver falhado, a rota retorna `null`. As alternativas podem ser embaralhadas antes da resposta.
+Enquanto o quiz estiver em `processing` ou não existir, a rota retorna `null`. Se a geração tiver falhado, retorna HTTP `500`. As alternativas podem ser embaralhadas antes da resposta.
 
 ### `POST /quiz/answer`
 
@@ -390,7 +390,7 @@ Resposta:
 }
 ```
 
-A resposta é `null` enquanto o quiz não estiver concluído ou quando o enunciado não for encontrado.
+A resposta é `null` enquanto o quiz estiver em processamento, não existir ou quando o enunciado não for encontrado. Se a geração tiver falhado, retorna HTTP `500`.
 
 ### `DELETE /quiz`
 
@@ -427,6 +427,10 @@ docker exec quiz-eita-redis redis-cli -n 0 SCAN 0 MATCH "quiz:*" COUNT 100
 
 O contexto documental usa `REDIS_URL_RAG`. Mantenha o banco RAG separado do banco dos quizzes quando a instância Redis for compartilhada.
 
+Os clientes de quiz e RAG fazem até duas tentativas por operação Redis (a inicial e uma repetição), sem espera adicional entre elas, em falhas de conexão ou timeout. Os timeouts de conexão e de leitura são de 5 segundos cada. A política também se aplica aos comandos de `SCAN`/`SSCAN` e aos pipelines.
+
+Se ambas as tentativas falharem durante uma requisição, a API retorna HTTP `500` com `{"detail":"Falha ao acessar o Redis. Tente novamente."}`. A geração do quiz ocorre em segundo plano: falhas posteriores à criação são registradas como `failed`, quando o Redis permite gravar esse estado, e as consultas de perguntas e respostas retornam HTTP `500` ao encontrá-lo.
+
 ## Contexto documental e Google Drive
 
 O grafo de geração executa estas etapas:
@@ -447,12 +451,16 @@ cd C:\cod\Quiz-eita
 
 .\venv\Scripts\python.exe -c "import sys; sys.path.insert(0, 'quiz/src'); from presentation.http.main import app; print(app.title)"
 
+.\venv\Scripts\python.exe -m unittest discover -s quiz/tests -v
+
 cd .\interface-quiz
 npm ci
 npm run build
 ```
 
-Com Redis, as variáveis e as credenciais configuradas, valide também `/health` e o fluxo das rotas descritas acima. A importação e o build não comprovam conectividade com Redis, Gemini ou Google Drive.
+Os testes de retry exercitam a política da biblioteca Redis e as rotas FastAPI com falhas simuladas, sem conectar a um servidor Redis.
+
+Com Redis, as variáveis e as credenciais configuradas, valide também `/health` e o fluxo das rotas descritas acima. A importação, os testes isolados e o build não comprovam conectividade com Redis, Gemini ou Google Drive.
 
 ## Deploy com Docker
 

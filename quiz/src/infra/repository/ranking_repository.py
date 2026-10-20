@@ -4,7 +4,7 @@ import json
 
 class RankingRepository:
     def __init__(self, redis_client) -> None:
-        self.redis = redis_client
+        self.redis = redis_client.client
 
     def get_ranking(self, difficulty: str):
         return self.redis.get(f"ranking:{difficulty}")

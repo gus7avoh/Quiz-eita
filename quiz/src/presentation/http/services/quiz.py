@@ -6,6 +6,7 @@ from app.graph.graph import graph
 from domain.entities.quiz import Quiz
 from domain.entities.InterpretAnswer import AnswerToInterpret
 from presentation.http.services.interpret_answer import interpret_answer
+from fastapi import HTTPException
 import asyncio
 import logging
 
@@ -83,21 +84,21 @@ async def get_quiz(
 
         return quiz_dto.get_question()
 
-    except Exception as e:
+    except Exception:
         logger.exception("Falha ao processar quiz uuid=%s", quiz_uuid)
-        await repository.fail(quiz_uuid, str(e))
+        raise
 
 
 async def delete_quiz(list_uuid: list[str]):
-    correct = 0
+    deleted = []
     for uuid in list_uuid:
         try:
-            await repository.delete(uuid)
-            correct += 1
-            return {"excluded": len(list_uuid) == correct}
-        except Exception as e:
+            deleted.append(await repository.delete(uuid))
+        except Exception:
             logger.exception("Falha ao processar quiz uuid=%s", uuid)
-            await repository.fail(uuid, str(e))
+            raise
+
+    return {"excluded": all(deleted)}
 
 async def answer_quiz(
         quiz_uuid: str,
@@ -152,7 +153,10 @@ async def status_check(quiz_uuid: str):
 
     status = data["status"]
 
-    if status in ("completed", "failed"):
+    if status == "failed":
+        raise HTTPException(status_code=500, detail="Falha ao gerar o quiz.")
+
+    if status == "completed":
         return status
 
     return "processing"
