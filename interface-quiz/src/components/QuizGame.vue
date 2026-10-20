@@ -100,7 +100,7 @@ function enivarRanking() {
 
             <div class="options">
 
-                <label v-for="(alternativa, i) in perguntaAtual.alternativas" :key="alternativa" class="option">
+                <label v-for="(alternativa) in perguntaAtual.alternativas" :key="alternativa" class="option">
 
                     <input
                     type="radio"
