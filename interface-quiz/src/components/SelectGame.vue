@@ -93,38 +93,69 @@
 <template>
   <div id="janela">
 
-    <header>
+    <header class="sr-only">
 
         <h1>Jogo</h1>
 
     </header>
 
-    <main>
+    <main class="stage">
 
-      <div v-if = "!quiz">
-        
-        <input v-model="tema" placeholder="Tema do quiz"/>
+      <div v-if = "!quiz" class="setup">
 
-        <label for="dificuldade">Selecione uma dificuldade</label>        
-        <select v-model="dificuldade" id="dificuldade">
+        <h2 class="setup-title">Monte seu quiz</h2>
 
-          <option disabled value="">Escolha...</option>
-          <option value="Fácil">Fácil</option>
-          <option value="Médio">Médio</option>
-          <option value="Difícil">Difícil</option>
-          <option value="Impossível">Impossível</option>
-          <option value="Misto">Misto</option>
+        <div class="field">
+          <label for="tema">Tema do quiz</label>
+          <input id="tema" class="text-input" v-model="tema" placeholder="Ex.: Vue, redes, banco de dados"/>
+        </div>
 
-        </select>
-        
+        <fieldset class="field">
 
-        <button :disabled="carregando || !tema.trim() || !dificuldade" @click="gerarQuiz">
-          {{carregando ? 'Gerando...' : 'Criar quiz'}}
-        </button>
+          <legend>Selecione uma dificuldade</legend>
 
-        <p v-if="erro">
-          {{ erro }}
-        </p>
+          <div class="chips">
+
+            <label class="chip">
+              <input type="radio" name="dificuldade" value="Fácil" v-model="dificuldade"/>
+              <span class="chip-body"><span class="dot dot-facil"></span>Fácil</span>
+            </label>
+
+            <label class="chip">
+              <input type="radio" name="dificuldade" value="Médio" v-model="dificuldade"/>
+              <span class="chip-body"><span class="dot dot-medio"></span>Médio</span>
+            </label>
+
+            <label class="chip">
+              <input type="radio" name="dificuldade" value="Difícil" v-model="dificuldade"/>
+              <span class="chip-body"><span class="dot dot-dificil"></span>Difícil</span>
+            </label>
+
+            <label class="chip">
+              <input type="radio" name="dificuldade" value="Impossível" v-model="dificuldade"/>
+              <span class="chip-body"><span class="dot dot-impossivel"></span>Impossível</span>
+            </label>
+
+            <label class="chip">
+              <input type="radio" name="dificuldade" value="Misto" v-model="dificuldade"/>
+              <span class="chip-body"><span class="dot dot-misto"></span>Misto</span>
+            </label>
+
+          </div>
+
+        </fieldset>
+
+        <div class="actions">
+
+          <button class="btn" :class="{ loading: carregando }" :disabled="carregando || !tema.trim() || !dificuldade" @click="gerarQuiz">
+            {{carregando ? 'Gerando...' : 'Criar quiz'}}
+          </button>
+
+          <p v-if="erro" class="error-msg" role="alert">
+            {{ erro }}
+          </p>
+
+        </div>
 
       </div>
       
@@ -143,234 +174,155 @@
 
 <style scoped>
 
-
-#janela{
-  background-color: #444;
+#janela {
   display: flex;
   flex-direction: column;
-  flex:1;
+  flex: 1;
+  min-width: 0;
+  padding: clamp(20px, 3.2vw, 44px);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius-lg);
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* formulário de criação */
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  width: 100%;
+  max-width: 34rem;
+  margin: auto;
+}
+
+.setup-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.1rem + 1.8vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field label,
+.field legend {
+  display: block;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* chips de dificuldade */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.field .chip {
+  position: relative;
+  display: block;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* o radio fica por cima, invisível, para continuar clicável e focável */
+.chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  width: 100%;
-  border-radius: 12px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
-header{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 1.01rem;
-    font-family: 'Rubik Marker Hatch', cursive;
-    font-weight: normal;
-    color: var(--primary-color);
-    margin: 0 0 20px 0;
+.chip-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 18px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 0 var(--line);
+  font-weight: 700;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.input {
-  width: 100%;
-  max-width: 270px;
-  height: 60px;
-  padding: 12px;
-  font-size: 18px;
-  font-family: "Courier New", monospace;
-  color: #000;
-  background-color: #fff;
-  border: 4px solid #000;
-  border-radius: 0;
-  outline: none;
-  transition: all 0.3s ease;
-  box-shadow: 8px 8px 0 #000;
+.chip:hover .chip-body {
+  border-color: #B5BAE8;
+  box-shadow: 0 4px 0 #B5BAE8;
 }
 
-.input::placeholder {
-  color: #888;
+.chip:active .chip-body {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--line);
 }
 
-.input:hover {
-  transform: translate(-4px, -4px);
-  box-shadow: 12px 12px 0 #000;
+.chip input:focus-visible + .chip-body {
+  outline: 3px solid var(--cobalt);
+  outline-offset: 3px;
 }
 
-.input:focus {
-  background-color: #000;
-  color: #fff;
-  border-color: #ffffff;
+.chip input:checked + .chip-body {
+  border-color: var(--cobalt);
+  background: #EEF0FF;
+  box-shadow: 0 4px 0 var(--cobalt);
+  color: var(--cobalt);
 }
 
-.input:focus::placeholder {
-  color: #fff;
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
 }
 
-@keyframes typing {
-  from {
-    width: 0;
-  }
+/* indicador de carregamento dentro do botão */
+.btn.loading::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(20, 18, 59, 0.25);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+
+.btn.loading:disabled {
+  background: var(--sun);
+  color: var(--ink);
+  box-shadow: 0 5px 0 var(--sun-edge);
+  cursor: progress;
+}
+
+@keyframes girar {
   to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 30rem) {
+  .actions .btn {
     width: 100%;
   }
 }
-
-@keyframes blink {
-  50% {
-    border-color: transparent;
-  }
-}
-
-.input:focus::after {
-  content: "|";
-  position: absolute;
-  right: 10px;
-  animation: blink 0.7s step-end infinite;
-}
-
-.input:valid {
-  animation: typing 2s steps(30, end);
-}
-.input-container {
-  position: relative;
-  width: 100%;
-  max-width: 270px;
-}
-
-.input {
-  width: 100%;
-  height: 60px;
-  padding: 12px;
-  font-size: 18px;
-  font-family: "Courier New", monospace;
-  color: #000;
-  background-color: #fff;
-  border: 4px solid #000;
-  border-radius: 0;
-  outline: none;
-  transition: all 0.3s ease;
-  box-shadow: 8px 8px 0 #000;
-}
-
-.input::placeholder {
-  color: #888;
-}
-
-.input:hover {
-  transform: translate(-4px, -4px);
-  box-shadow: 12px 12px 0 #000;
-}
-
-.input:focus {
-  background-color: #010101;
-  color: #fff;
-  border-color: #d6d9dd;
-}
-
-.input:focus::placeholder {
-  color: #fff;
-}
-
-@keyframes shake {
-  0% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px) rotate(-5deg);
-  }
-  50% {
-    transform: translateX(5px) rotate(5deg);
-  }
-  75% {
-    transform: translateX(-5px) rotate(-5deg);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.input:focus {
-  animation: shake 0.5s ease-in-out;
-}
-
-@keyframes glitch {
-  0% {
-    transform: none;
-    opacity: 1;
-  }
-  7% {
-    transform: skew(-0.5deg, -0.9deg);
-    opacity: 0.75;
-  }
-  10% {
-    transform: none;
-    opacity: 1;
-  }
-  27% {
-    transform: none;
-    opacity: 1;
-  }
-  30% {
-    transform: skew(0.8deg, -0.1deg);
-    opacity: 0.75;
-  }
-  35% {
-    transform: none;
-    opacity: 1;
-  }
-  52% {
-    transform: none;
-    opacity: 1;
-  }
-  55% {
-    transform: skew(-1deg, 0.2deg);
-    opacity: 0.75;
-  }
-  50% {
-    transform: none;
-    opacity: 1;
-  }
-  72% {
-    transform: none;
-    opacity: 1;
-  }
-  75% {
-    transform: skew(0.4deg, 1deg);
-    opacity: 0.75;
-  }
-  80% {
-    transform: none;
-    opacity: 1;
-  }
-  100% {
-    transform: none;
-    opacity: 1;
-  }
-}
-
-.input:not(:placeholder-shown) {
-  animation: glitch 1s linear infinite;
-}
-
-.input-container::after {
-  content: "|";
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #000;
-  animation: blink 0.7s step-end infinite;
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-.input:focus + .input-container::after {
-  color: #fff;
-}
-
-.input:not(:placeholder-shown) {
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-shadow: 0px 0px 0 #000;
-}
-
 
 </style>
