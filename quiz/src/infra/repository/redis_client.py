@@ -18,7 +18,7 @@ class RedisClient:
             redis_url,
             decode_responses=True,
             socket_connect_timeout=5,
-            socket_timeout=5,
+            socket_timeout=30,
             retry=Retry(NoBackoff(), retries=1),
         )
 
