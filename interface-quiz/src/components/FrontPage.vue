@@ -65,23 +65,21 @@ import SelectGame from './SelectGame.vue';
     box-sizing: border-box;
 }
 
-/* !important aqui é de propósito: garante que a página role e que o fundo
-   seja o do tema, mesmo que exista um CSS global antigo travando
-   altura/overflow ou pintando o fundo de escuro. */
+/* !important garante que a aplicação respeite a altura da janela mesmo
+   com estilos globais antigos. */
 html {
-    height: auto !important;
+    height: 100% !important;
     overflow-x: hidden;
-    overflow-y: auto !important;
+    overflow-y: hidden !important;
     background: var(--cobalt) !important;
 }
 
 html body {
     margin: 0;
     display: block !important;
-    height: auto !important;
+    height: 100% !important;
     min-width: 320px;
-    min-height: 100dvh;
-    overflow: visible !important;
+    overflow: hidden !important;
     background: var(--cobalt) !important;
     color: var(--ink);
     font-family: var(--font-body);
@@ -94,13 +92,39 @@ html body {
 html body #app {
     display: block !important;
     width: auto !important;
-    height: auto !important;
+    height: 100% !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     background: transparent !important;
     text-align: left;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cobalt) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: var(--cobalt);
+    background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--ink);
+    background-clip: padding-box;
 }
 
 /* botão principal: tecla com "borda" inferior que afunda ao clicar */
@@ -223,11 +247,14 @@ html body #app {
 
 <style scoped>
 .janela {
-    min-height: 100dvh;
+    height: 100dvh;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: clamp(16px, 2.2vw, 28px);
     padding: clamp(16px, 2.5vw, 32px);
+    overflow: hidden;
+    border-radius: var(--radius-lg);
 }
 
 .topo {
@@ -247,7 +274,7 @@ html body #app {
     background: var(--sun);
     color: var(--ink);
     font-family: var(--font-display);
-    font-size: clamp(1.9rem, 1.2rem + 2.6vw, 3.2rem);
+    font-size: clamp(1.75rem, 1.1rem + 2.2vw, 2.9rem);
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1;
@@ -281,6 +308,7 @@ html body #app {
     grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
     gap: clamp(16px, 2vw, 28px);
     min-height: 0;
+    overflow: hidden;
 }
 
 /* o jogo fica na coluna principal; o ranking, ao lado */
@@ -292,12 +320,17 @@ html body #app {
     min-height: 0;
 }
 
+.content_wrapper main :deep(#janela) {
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .content_wrapper aside {
     grid-column: 2;
     grid-row: 1;
     position: relative;
     min-width: 0;
-    min-height: 30rem;
+    min-height: 0;
 }
 
 /* o ranking rola por dentro e nunca estica a página */
@@ -309,12 +342,14 @@ html body #app {
 @media (max-width: 62rem) {
     .content_wrapper {
         grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(20rem, 1fr) minmax(12rem, 0.65fr);
+        overflow-y: auto;
     }
 
     .content_wrapper aside {
         grid-column: 1;
         grid-row: 2;
-        height: 28rem;
+        height: auto;
         min-height: 0;
     }
 }

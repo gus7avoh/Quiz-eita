@@ -213,10 +213,12 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  padding: clamp(20px, 3.2vw, 44px);
+  min-height: 0;
+  padding: clamp(16px, 2.5vw, 32px);
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius-lg);
+  scrollbar-color: var(--cobalt) transparent;
 }
 
 .stage {
@@ -230,7 +232,7 @@
 .setup {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: clamp(12px, 2vh, 22px);
   width: 100%;
   max-width: 34rem;
   margin: auto;
