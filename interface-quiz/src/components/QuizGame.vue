@@ -113,11 +113,14 @@ function enivarRanking() {
                     <span
                         class="option-body"
                         :class="{
-                            correct: respostaResponse && alternativaSelecionada === alternativa && respostaResponse.correta,
+                            correct: respostaResponse && respostaResponse.resposta === alternativa,
                             wrong: respostaResponse && alternativaSelecionada === alternativa && !respostaResponse.correta
                         }"
                     >
                         <span class="option-text">{{ alternativa }}</span>
+                        <span v-if="respostaResponse && respostaResponse.resposta === alternativa" class="option-result">
+                            ✓ Resposta correta
+                        </span>
                     </span>
 
                 </label>
@@ -247,7 +250,7 @@ function enivarRanking() {
     max-width: 44rem;
     margin: 0 0 24px;
     padding: 0;
-    font-size: clamp(1.3rem, 1rem + 1.2vw, 1.85rem);
+    font-size: clamp(1.15rem, 0.9rem + 1vw, 1.6rem); 
     font-weight: 800;
     line-height: 1.25;
 }
@@ -279,6 +282,7 @@ function enivarRanking() {
 
 .option-body {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 14px;
     height: 100%;
@@ -292,6 +296,18 @@ function enivarRanking() {
     font-weight: 600;
     line-height: 1.35;
     transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.option-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.option-result {
+    flex: none;
+    color: #0B5A3C;
+    font-size: 0.82rem;
+    font-weight: 800;
 }
 
 .option:hover .option-body {
@@ -333,6 +349,12 @@ function enivarRanking() {
 }
 
 .option input:checked + .option-body.correct {
+    border-color: var(--mint);
+    background: var(--mint-soft);
+    box-shadow: 0 5px 0 var(--mint);
+}
+
+.option-body.correct {
     border-color: var(--mint);
     background: var(--mint-soft);
     box-shadow: 0 5px 0 var(--mint);
@@ -506,6 +528,36 @@ function enivarRanking() {
     flex-direction: column;
     gap: 16px;
     width: 100%;
+}
+
+@media (max-height: 760px) {
+    .progress {
+        margin-bottom: 16px;
+    }
+
+    .question legend {
+        margin-bottom: 16px;
+    }
+
+    .options {
+        gap: 10px;
+    }
+
+    .option-body {
+        min-height: 56px;
+        padding: 10px 14px;
+        font-size: 0.98rem;
+    }
+
+    .actions {
+        margin-top: 18px;
+    }
+
+    .feedback {
+        gap: 12px;
+        margin-top: 16px;
+        padding: 14px 16px;
+    }
 }
 
 @keyframes entra {

@@ -5,11 +5,32 @@
   import QuizGame from './QuizGame.vue'
 
   const tema = ref('')
+  const temaPredefinido = ref('')
   const dificuldade = ref('')
   const uuid = ref('')
   const quiz = ref<BuscarQuizResponse | null> (null)
   const carregando = ref(false)
   const erro = ref('')
+  const temasPredefinidos = [
+    'c#',
+    'famosos',
+    'filmes',
+    'java',
+    'java script',
+    'jogos',
+    'musicas',
+    'python',
+  ]
+
+  function selecionarTemaPredefinido() {
+    if (temaPredefinido.value) {
+      tema.value = ''
+    }
+  }
+
+  function digitarTema() {
+    temaPredefinido.value = ''
+  }
   
     //função de criar quiz que chama criarQuiz do QuizService
   async function gerarQuiz() {
@@ -19,7 +40,8 @@
 
     try {
 
-      const id = await criarQuiz({tema: tema.value.trim(), quantidade: 5, dificuldade: dificuldade.value}) 
+      const temaSelecionado = temaPredefinido.value || tema.value.trim()
+      const id = await criarQuiz({tema: temaSelecionado, quantidade: 5, dificuldade: dificuldade.value})
       uuid.value=id
       await esperarResposta(id)
 
@@ -66,6 +88,7 @@
       quiz.value = null
       uuid.value = ''
       tema.value = ''
+      temaPredefinido.value = ''
       dificuldade.value = ''
       return
     }
@@ -82,6 +105,7 @@
     quiz.value=null
     uuid.value=''
     tema.value=''
+    temaPredefinido.value = ''
     dificuldade.value=''
 
   }
@@ -107,7 +131,17 @@
 
         <div class="field">
           <label for="tema">Tema do quiz</label>
-          <input id="tema" class="text-input" v-model="tema" placeholder="Ex.: Vue, redes, banco de dados"/>
+          <div class="theme-fields">
+            <input id="tema" class="text-input" v-model="tema" @input="digitarTema" placeholder="Ex.: Vue, redes, banco de dados"/>
+
+            <label for="tema-predefinido">Ou escolha um tema</label>
+            <select id="tema-predefinido" class="select-input" v-model="temaPredefinido" @change="selecionarTemaPredefinido">
+              <option value=""></option>
+              <option v-for="temaOpcao in temasPredefinidos" :key="temaOpcao" :value="temaOpcao">
+                {{ temaOpcao }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <fieldset class="field">
@@ -147,7 +181,7 @@
 
         <div class="actions">
 
-          <button class="btn" :class="{ loading: carregando }" :disabled="carregando || !tema.trim() || !dificuldade" @click="gerarQuiz">
+          <button class="btn" :class="{ loading: carregando }" :disabled="carregando || (!tema.trim() && !temaPredefinido) || !dificuldade" @click="gerarQuiz">
             {{carregando ? 'Gerando...' : 'Criar quiz'}}
           </button>
 
@@ -179,10 +213,12 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  padding: clamp(20px, 3.2vw, 44px);
+  min-height: 0;
+  padding: clamp(16px, 2.5vw, 32px);
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius-lg);
+  scrollbar-color: var(--cobalt) transparent;
 }
 
 .stage {
@@ -196,7 +232,7 @@
 .setup {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: clamp(12px, 2vh, 22px);
   width: 100%;
   max-width: 34rem;
   margin: auto;
@@ -218,6 +254,11 @@
   border: 0;
 }
 
+.theme-fields {
+  display: grid;
+  gap: 12px;
+}
+
 .field label,
 .field legend {
   display: block;
@@ -225,6 +266,32 @@
   padding: 0;
   font-size: 1rem;
   font-weight: 800;
+}
+
+.theme-fields label {
+  margin: 2px 0 -4px;
+  font-size: 0.95rem;
+}
+
+.select-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 18px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.select-input:focus {
+  outline: none;
+  border-color: var(--cobalt);
+  box-shadow: 0 0 0 4px rgba(47, 63, 224, 0.2);
 }
 
 /* chips de dificuldade */
