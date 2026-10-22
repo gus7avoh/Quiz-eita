@@ -29,6 +29,11 @@ const erro = ref('')
 const enviando = ref(false)
 const enviado = ref(false)
 const respondida = computed(() => respostaResponse.value !== null)
+const nomeValido = computed(() =>
+    nomeUsuario.value.trim().length > 0 &&
+    nomeUsuario.value.length <= 12 &&
+    /\p{L}/u.test(nomeUsuario.value)
+)
 
 
 async function enviarResposta() {
@@ -70,10 +75,17 @@ function proximaQuestao() {
 }
 
 function enivarRanking() {
-    if(enviado.value || !nomeUsuario.value.trim()) return
+    if(enviado.value || !nomeValido.value) return
 
     enviado.value = true
     emit('voltarMenu', { nome: nomeUsuario.value.trim(), pontos: acertos.value })
+}
+
+function filtrarNome(event: Event) {
+    const input = event.target as HTMLInputElement
+    const nomeFiltrado = input.value.normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').slice(0, 12)
+    nomeUsuario.value = nomeFiltrado
+    input.value = nomeFiltrado
 }
 
 </script>
@@ -184,8 +196,17 @@ function enivarRanking() {
         </div>
 
         <div class="save">
-            <input class="text-input" v-model="nomeUsuario" placeholder="Digite seu nome para o ranking" aria-label="Seu nome para o ranking"/>
-            <button class="btn" :disabled="!nomeUsuario.trim()" @click="enivarRanking">
+            <input
+                class="text-input"
+                v-model="nomeUsuario"
+                maxlength="12"
+                placeholder="Digite seu nome para o ranking"
+                aria-label="Seu nome para o ranking"
+                aria-describedby="name-rules"
+                @input="filtrarNome"
+            />
+            <p id="name-rules" class="name-rules">Até 12 caracteres, sem emojis ou pontuação, e com pelo menos uma letra.</p>
+            <button class="btn" :disabled="!nomeValido" @click="enivarRanking">
                 {{ enviado ? 'Enviando...' : 'Enviar' }}
             </button>
         </div>
@@ -528,6 +549,12 @@ function enivarRanking() {
     flex-direction: column;
     gap: 16px;
     width: 100%;
+}
+
+.name-rules {
+    margin: -8px 0 0;
+    color: var(--muted);
+    font-size: 0.875rem;
 }
 
 @media (max-height: 760px) {
