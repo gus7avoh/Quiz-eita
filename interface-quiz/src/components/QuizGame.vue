@@ -61,9 +61,8 @@ async function lerExplicacao() {
     }
     
 }
-
-async function enviarResposta() {
-
+async function enviarResposta(tentativa = 1) {
+    
     if (enviando.value || respondida.value || !alternativaSelecionada.value) return
 
     enviando.value = true
@@ -72,19 +71,27 @@ async function enviarResposta() {
 
     const respostaRequest: RespostaRequest = ({uuid: props.uuid, 'enunciado': perguntaAtual.value.enunciado, 'resposta_usuario': alternativaSelecionada.value!})
 
+    let tentarDeNovo = false
+
     try {
         respostaResponse.value = await responderQuiz(respostaRequest)
-        if(respostaResponse.value.correta) {
-            acertos.value++
-        }
+        if(respostaResponse.value.correta) { acertos.value++ }
     }
     catch(e) {
+
         console.error(e)
-        erro.value='Houve um erro ao responder o quiz, tente novamente'
+        if(tentativa <5) {tentarDeNovo = true}
+
         }
+
     finally{
+
         enviando.value = false
+
     }
+
+    if(tentarDeNovo) {enviarResposta(tentativa + 1)}
+    if(tentativa >= 5) {erro.value='Houve um erro ao enviar a resposta, tente novamente'}
     
 }
 
@@ -100,6 +107,7 @@ async function enviarRespostaAudio() {
     } catch (e) {
         console.error(e)
         erro.value='Houve um erro ao ouvir a resposta, tente novamente'
+        falar('Houve um erro ao ouvir a resposta, tente novamente')
         return
 
     } finally {
@@ -191,7 +199,7 @@ function filtrarNome(event: Event) {
             </div>
             <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
             <div class="actions">
-                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
                 <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
                 <button class="btn" @click="lerTexto">ler texto</button>
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
