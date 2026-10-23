@@ -4,6 +4,7 @@ import TesteVoz from './testeVoz.vue';
 </script>
 
 <template>
+  <TesteVoz />
   <FrontPage />
   
 </template>
