@@ -80,7 +80,8 @@ async function enviarResposta(tentativa = 1) {
     catch(e) {
 
         console.error(e)
-        if(tentativa <5) {tentarDeNovo = true}
+        if(tentativa >= 5) {erro.value='Houve um erro ao enviar a resposta, tente novamente'}
+        else if(tentativa <5) {tentarDeNovo = true}
 
         }
 
@@ -90,13 +91,19 @@ async function enviarResposta(tentativa = 1) {
 
     }
 
-    if(tentarDeNovo) {enviarResposta(tentativa + 1)}
-    if(tentativa >= 5) {erro.value='Houve um erro ao enviar a resposta, tente novamente'}
+    if(tentarDeNovo) {
+        await new Promise(r => setTimeout(r, 500 * tentativa))
+        await enviarResposta(tentativa + 1)
+    }
+    
     
 }
 
 async function enviarRespostaAudio() {
 
+    if (ouvindo.value || enviando.value || respondida.value) return
+    
+    window.speechSynthesis.cancel()
     ouvindo.value = true
     erro.value=''
 
