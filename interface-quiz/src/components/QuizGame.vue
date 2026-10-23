@@ -4,7 +4,7 @@
     import { responderQuiz } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse} from '../types/QuizTypes'
-    import { ouvindoUsuario } from '../service/speechRecognitionService';
+    import { ouvindoUsuario, falar } from '../service/speechRecognitionService';
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
     //Resposta = { enunciado: string, resposta: string }
@@ -37,6 +37,30 @@ const nomeValido = computed(() =>
 )
 const ouvindo = ref(false)
 
+async function lerTexto() {
+    const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
+    try{
+        falar(textoFalar)
+    }
+    catch(e) {
+        console.error(e)
+        erro.value='Houve um erro ao ler o texto, tente novamente'
+    }
+}
+
+async function lerExplicacao() {
+    if(!respostaResponse.value) return
+    try{
+        const textoAcerto = respostaResponse.value.correta ? "Você acertou!" : "Você errou!"
+        const textoFalar = `${textoAcerto} Explicação: ${respostaResponse.value?.explicacao}`
+        falar(textoFalar)
+    }
+    catch(e) {
+        console.error(e)
+        erro.value='Houve um erro ao ler a explicação, tente novamente'
+    }
+    
+}
 
 async function enviarResposta() {
 
@@ -65,21 +89,25 @@ async function enviarResposta() {
 }
 
 async function enviarRespostaAudio() {
+
     ouvindo.value = true
+    erro.value=''
 
     try {
         alternativaSelecionada.value = await ouvindoUsuario()
-        console.log(alternativaSelecionada.value)
-        enviarResposta()
-
+        if(alternativaSelecionada.value) {console.log(alternativaSelecionada.value)}
 
     } catch (e) {
         console.error(e)
         erro.value='Houve um erro ao ouvir a resposta, tente novamente'
+        return
+
     } finally {
-        enviando.value = false
         ouvindo.value = false
     }
+
+    await enviarResposta()
+    lerExplicacao()
 }
 
 function proximaQuestao() {
@@ -165,6 +193,7 @@ function filtrarNome(event: Event) {
             <div class="actions">
                 <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
                 <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
+                <button class="btn" @click="lerTexto">ler texto</button>
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
             </div>
 
