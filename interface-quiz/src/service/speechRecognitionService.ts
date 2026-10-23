@@ -42,24 +42,3 @@ export function falar(text: string, lang: string = "pt-BR"): Promise<void> {
     window.speechSynthesis.speak(enunciado);
   });
 }
-
-type ResultadoResposta = {
-  correto: boolean;
-  respostaCorreta: string;
-};
-
-const URL_API = "http://169.58.5.68:8000/"; 
-
-export async function enviarResposta(idQuestao: string, respostaUsuario: string,): Promise<ResultadoResposta> {
-  const respostaServidor = await fetch(`${URL_API}/answer`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idQuestao, respostaUsuario }),
-  });
-  
-  if (!respostaServidor.ok) {
-    throw new Error(`Erro do servidor: ${respostaServidor.status}`);
-  }
-
-  return respostaServidor.json();
-}

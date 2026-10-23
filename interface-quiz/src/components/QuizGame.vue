@@ -4,6 +4,7 @@
     import { responderQuiz } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse} from '../types/QuizTypes'
+    import { ouvindoUsuario } from '../service/speechRecognitionService';
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
     //Resposta = { enunciado: string, resposta: string }
@@ -34,6 +35,7 @@ const nomeValido = computed(() =>
     nomeUsuario.value.length <= 12 &&
     /\p{L}/u.test(nomeUsuario.value)
 )
+const ouvindo = ref(false)
 
 
 async function enviarResposta() {
@@ -42,6 +44,7 @@ async function enviarResposta() {
 
     enviando.value = true
     erro.value = ''
+    respostaResponse.value = null
 
     const respostaRequest: RespostaRequest = ({uuid: props.uuid, 'enunciado': perguntaAtual.value.enunciado, 'resposta_usuario': alternativaSelecionada.value!})
 
@@ -59,6 +62,24 @@ async function enviarResposta() {
         enviando.value = false
     }
     
+}
+
+async function enviarRespostaAudio() {
+    ouvindo.value = true
+
+    try {
+        alternativaSelecionada.value = await ouvindoUsuario()
+        console.log(alternativaSelecionada.value)
+        enviarResposta()
+
+
+    } catch (e) {
+        console.error(e)
+        erro.value='Houve um erro ao ouvir a resposta, tente novamente'
+    } finally {
+        enviando.value = false
+        ouvindo.value = false
+    }
 }
 
 function proximaQuestao() {
@@ -105,11 +126,13 @@ function filtrarNome(event: Event) {
                 ></span>
             </div>
         </div>
-    
+
+    <!--######################################################## PERGUNTAS #######################-->
         <fieldset class="question">
 
             <legend>{{ perguntaAtual.enunciado }}</legend>
 
+            <!--################## ALTERNATIVAS ##################-->
             <div class="options">
 
                 <label v-for="(alternativa) in perguntaAtual.alternativas" :key="alternativa" class="option">
@@ -138,9 +161,10 @@ function filtrarNome(event: Event) {
                 </label>
 
             </div>
-
+            <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
             <div class="actions">
-                <button class="btn" :disabled="!alternativaSelecionada" @click="enviarResposta">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+                <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
             </div>
 
