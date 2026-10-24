@@ -4,6 +4,7 @@
     import { responderQuiz } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse} from '../types/QuizTypes'
+    import { ouvindoUsuario, falar } from '../service/speechRecognitionService';
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
     //Resposta = { enunciado: string, resposta: string }
@@ -29,31 +30,99 @@ const erro = ref('')
 const enviando = ref(false)
 const enviado = ref(false)
 const respondida = computed(() => respostaResponse.value !== null)
+const nomeValido = computed(() =>
+    nomeUsuario.value.trim().length > 0 &&
+    nomeUsuario.value.length <= 12 &&
+    /\p{L}/u.test(nomeUsuario.value)
+)
+const ouvindo = ref(false)
 
+async function lerTexto() {
+    const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
+    try{
+        falar(textoFalar)
+    }
+    catch(e) {
+        console.error(e)
+        erro.value='Houve um erro ao ler o texto, tente novamente'
+    }
+}
 
-async function enviarResposta() {
-
+async function lerExplicacao() {
+    if(!respostaResponse.value) return
+    try{
+        const textoAcerto = respostaResponse.value.correta ? "Você acertou!" : "Você errou!"
+        const textoFalar = `${textoAcerto} Explicação: ${respostaResponse.value?.explicacao}`
+        falar(textoFalar)
+    }
+    catch(e) {
+        console.error(e)
+        erro.value='Houve um erro ao ler a explicação, tente novamente'
+    }
+    
+}
+async function enviarResposta(tentativa = 1) {
+    
     if (enviando.value || respondida.value || !alternativaSelecionada.value) return
 
     enviando.value = true
     erro.value = ''
+    respostaResponse.value = null
 
     const respostaRequest: RespostaRequest = ({uuid: props.uuid, 'enunciado': perguntaAtual.value.enunciado, 'resposta_usuario': alternativaSelecionada.value!})
 
+    let tentarDeNovo = false
+
     try {
         respostaResponse.value = await responderQuiz(respostaRequest)
-        if(respostaResponse.value.correta) {
-            acertos.value++
-        }
+        if(respostaResponse.value.correta) { acertos.value++ }
     }
     catch(e) {
+
         console.error(e)
-        erro.value='Houve um erro ao responder o quiz, tente novamente'
+        if(tentativa >= 5) {erro.value='Houve um erro ao enviar a resposta, tente novamente'}
+        else if(tentativa <5) {tentarDeNovo = true}
+
         }
+
     finally{
+
         enviando.value = false
+
+    }
+
+    if(tentarDeNovo) {
+        await new Promise(r => setTimeout(r, 500 * tentativa))
+        await enviarResposta(tentativa + 1)
     }
     
+    
+}
+
+async function enviarRespostaAudio() {
+
+    if (ouvindo.value || enviando.value || respondida.value) return
+    
+    window.speechSynthesis.cancel()
+    ouvindo.value = true
+    erro.value=''
+
+    try {
+        alternativaSelecionada.value = await ouvindoUsuario()
+        if(alternativaSelecionada.value) {console.log(alternativaSelecionada.value)}
+
+    } catch (e) {
+        console.error(e)
+        erro.value='Houve um erro ao ouvir a resposta, tente novamente'
+        falar('Houve um erro ao ouvir a resposta, tente novamente')
+        return
+
+    } finally {
+        ouvindo.value = false
+    }
+
+    await enviarResposta()
+    lerExplicacao()
 }
 
 function proximaQuestao() {
@@ -70,10 +139,17 @@ function proximaQuestao() {
 }
 
 function enivarRanking() {
-    if(enviado.value || !nomeUsuario.value.trim()) return
+    if(enviado.value || !nomeValido.value) return
 
     enviado.value = true
     emit('voltarMenu', { nome: nomeUsuario.value.trim(), pontos: acertos.value })
+}
+
+function filtrarNome(event: Event) {
+    const input = event.target as HTMLInputElement
+    const nomeFiltrado = input.value.normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').slice(0, 12)
+    nomeUsuario.value = nomeFiltrado
+    input.value = nomeFiltrado
 }
 
 </script>
@@ -93,11 +169,13 @@ function enivarRanking() {
                 ></span>
             </div>
         </div>
-    
+
+    <!--######################################################## PERGUNTAS #######################-->
         <fieldset class="question">
 
             <legend>{{ perguntaAtual.enunciado }}</legend>
 
+            <!--################## ALTERNATIVAS ##################-->
             <div class="options">
 
                 <label v-for="(alternativa) in perguntaAtual.alternativas" :key="alternativa" class="option">
@@ -126,9 +204,11 @@ function enivarRanking() {
                 </label>
 
             </div>
-
+            <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
             <div class="actions">
-                <button class="btn" :disabled="!alternativaSelecionada" @click="enviarResposta">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+                <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
+                <button class="btn" @click="lerTexto">ler texto</button>
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
             </div>
 
@@ -184,8 +264,17 @@ function enivarRanking() {
         </div>
 
         <div class="save">
-            <input class="text-input" v-model="nomeUsuario" placeholder="Digite seu nome para o ranking" aria-label="Seu nome para o ranking"/>
-            <button class="btn" :disabled="!nomeUsuario.trim()" @click="enivarRanking">
+            <input
+                class="text-input"
+                v-model="nomeUsuario"
+                maxlength="12"
+                placeholder="Digite seu nome para o ranking"
+                aria-label="Seu nome para o ranking"
+                aria-describedby="name-rules"
+                @input="filtrarNome"
+            />
+            <p id="name-rules" class="name-rules">Até 12 caracteres, sem emojis ou pontuação, e com pelo menos uma letra.</p>
+            <button class="btn" :disabled="!nomeValido" @click="enivarRanking">
                 {{ enviado ? 'Enviando...' : 'Enviar' }}
             </button>
         </div>
@@ -528,6 +617,12 @@ function enivarRanking() {
     flex-direction: column;
     gap: 16px;
     width: 100%;
+}
+
+.name-rules {
+    margin: -8px 0 0;
+    color: var(--muted);
+    font-size: 0.875rem;
 }
 
 @media (max-height: 760px) {
