@@ -65,11 +65,17 @@ async function enviarResposta(tentativa = 1) {
     
     if (enviando.value || respondida.value || !alternativaSelecionada.value) return
 
+    if(window.speechSynthesis.speaking) {window.speechSynthesis.cancel()}
+
     enviando.value = true
     erro.value = ''
     respostaResponse.value = null
 
-    const respostaRequest: RespostaRequest = ({uuid: props.uuid, 'enunciado': perguntaAtual.value.enunciado, 'resposta_usuario': alternativaSelecionada.value!})
+    const respostaRequest: RespostaRequest = ({
+        uuid: props.uuid, 
+        'enunciado': perguntaAtual.value.enunciado, 
+        'resposta_usuario': alternativaSelecionada.value!
+    })
 
     let tentarDeNovo = false
 
