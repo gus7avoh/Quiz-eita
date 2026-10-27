@@ -10,7 +10,7 @@ ENV_FILE = PROJECT_ROOT / ".env"
 
 def load_project_environment() -> None:
     """Load the repository-root environment file independently of cwd."""
-    load_dotenv(ENV_FILE)
+    load_dotenv(ENV_FILE, override=True)
 
 
 def resolve_project_path(value: str) -> Path:

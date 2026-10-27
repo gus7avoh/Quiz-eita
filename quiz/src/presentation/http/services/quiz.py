@@ -4,6 +4,7 @@ import logging
 from app.graph.graph import graph
 from domain.entities.InterpretAnswer import AnswerToInterpret
 from domain.entities.quiz import Quiz
+from fastapi import HTTPException
 from infra.repository.quiz_repository import QuizRepository
 from infra.repository.ranking_repository import RankingRepository
 from infra.repository.redis_client import RedisClient
@@ -101,21 +102,21 @@ async def get_quiz(
 
         return quiz_dto.get_question()
 
-    except Exception as e:
+    except Exception:
         logger.exception("Falha ao processar quiz uuid=%s", quiz_uuid)
-        await repository.fail(quiz_uuid, str(e))
+        raise
 
 
 async def delete_quiz(list_uuid: list[str]):
-    try:
-        for item in list_uuid:
-            await repository.delete(item.uuid)
+    deleted = []
+    for uuid in list_uuid:
+        try:
+            deleted.append(await repository.delete(uuid))
+        except Exception:
+            logger.exception("Falha ao processar quiz uuid=%s", uuid)
+            raise
 
-        return {"excluded": True}
-
-    except Exception as e:
-        logger.exception("Falha ao processar quiz uuid=%s", item.uuid)
-        await repository.fail(item.uuid, str(e))
+    return {"excluded": all(deleted)}
 
 
 async def answer_quiz(quiz_uuid: str, enunciado: str, resposta: str):
@@ -182,10 +183,15 @@ async def status_check(quiz_uuid: str):
     logger.info("Checando status do quiz uuid=%s", quiz_uuid)
 
     data = await repository.get_quiz(quiz_uuid)
+    if data is None:
+        return "missing"
 
     status = data["status"]
 
-    if status in ("completed", "failed"):
+    if status == "failed":
+        raise HTTPException(status_code=500, detail="Falha ao gerar o quiz.")
+
+    if status == "completed":
         return status
 
     return "processing"

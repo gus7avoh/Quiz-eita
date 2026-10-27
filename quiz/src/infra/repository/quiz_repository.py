@@ -5,9 +5,7 @@ class QuizRepository:
     def __init__(self, redis_client):
         self.redis = redis_client.client
 
-    async def create(
-        self, quiz_id: str, player_name: str, difficulty: str
-    ) -> None:
+    async def create(self, quiz_id: str, player_name: str, difficulty: str) -> None:
         await self.redis.set(
             f"quiz:{quiz_id}",
             json.dumps(
@@ -93,5 +91,7 @@ class QuizRepository:
             ),
         )
 
-    async def delete(self, quiz_id: str):
-        await self.redis.delete(f"quiz:{quiz_id}")
+    async def delete(self, quiz_id: str) -> bool:
+        id = f"quiz:{quiz_id}"
+        deleted_count = await self.redis.delete(id)
+        return deleted_count > 0

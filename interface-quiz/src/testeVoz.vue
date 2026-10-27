@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { ouvindoUsuario, falar } from "./speechRecognitionService"
+import { ouvindoUsuario, falar } from "./service/speechRecognitionService"
 
 const textoOuvido = ref("");
 const erro = ref("");

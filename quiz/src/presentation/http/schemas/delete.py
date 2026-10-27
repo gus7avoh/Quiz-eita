@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class QuizDeleteRequest(BaseModel):
@@ -6,7 +6,7 @@ class QuizDeleteRequest(BaseModel):
 
 
 class QuizDeleteListRequest(BaseModel):
-    list_uuid: list[QuizDeleteRequest]
+    list_uuid: list[QuizDeleteRequest] = Field(min_length=1)
 
 
 class QuizDeleteResponse(BaseModel):

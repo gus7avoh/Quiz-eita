@@ -23,3 +23,6 @@ Thumbs.db
 
 #NodeJS
 node_modules
+
+#Build
+dist

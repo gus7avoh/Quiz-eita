@@ -17,6 +17,7 @@ from presentation.http.services.quiz import get_quiz as get_quiz_service
 router = APIRouter(
     prefix="/quiz",
     tags=["quiz"],
+    responses={500: {"description": "Falha ao acessar o Redis ou gerar o quiz."}},
 )
 
 
@@ -45,4 +46,6 @@ async def answer_quiz(data: QuizAnswerRequest) -> QuizAnswerResponse | None:
 
 @router.delete("", response_model=QuizDeleteResponse | None)
 async def delete_quiz(data: QuizDeleteListRequest) -> QuizDeleteResponse | None:
-    return await delete_quiz_service(list_uuid=data.list_uuid)
+    return await delete_quiz_service(
+        list_uuid=[item.uuid for item in data.list_uuid],
+    )
