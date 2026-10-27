@@ -8,12 +8,14 @@ from fastapi.staticfiles import StaticFiles
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
 from presentation.http.routes.quiz import router as quiz_router
+from presentation.http.routes.ranking import router as ranking_router
 
 app = FastAPI(
     title="Quiz API",
 )
 
 app.include_router(quiz_router)
+app.include_router(ranking_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,7 +37,7 @@ def health():
     return {"status": "ok"}
 
 
-# Keep this mount after every API route so /health, /docs and /quiz/* are
+# Keep this mount after every API route so /health, /docs and API routes are
 # handled by FastAPI before the catch-all frontend mount.
 frontend_dir = Path(__file__).resolve().parents[4] / "frontend"
 if frontend_dir.is_dir():

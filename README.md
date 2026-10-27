@@ -220,7 +220,7 @@ O frontend fica em `interface-quiz/` e é uma aplicação Vue 3 escrita em TypeS
 | `src/components/FrontPage.vue` | organiza o título, o ranking lateral e a área principal do jogo |
 | `src/components/SelectGame.vue` | formulário de tema e dificuldade, criação do quiz e espera pelas perguntas |
 | `src/components/QuizGame.vue` | exibe uma pergunta por vez, permite voltar ou avançar e envia as respostas |
-| `src/components/RankingBar.vue` | apresenta o ranking visual atual, que ainda usa nomes fixos |
+| `src/components/RankingBar.vue` | apresenta a área visual do ranking |
 | `src/service/QuizService.ts` | concentra as chamadas HTTP para criar, consultar, responder e excluir quizzes |
 | `src/types/QuizTypes.ts` | descreve em TypeScript o formato dos dados trocados com a API |
 | `src/speechRecognitionService.ts` | encapsula fala do navegador e reconhecimento de voz |
@@ -228,10 +228,10 @@ O frontend fica em `interface-quiz/` e é uma aplicação Vue 3 escrita em TypeS
 
 ### O que acontece no frontend
 
-- Ao clicar em **Criar quiz**, `SelectGame.vue` envia tema, dificuldade e a quantidade `5` para `POST /quiz/create`.
+- Ao clicar em **Criar quiz**, `SelectGame.vue` envia nome do jogador, tema, dificuldade e a quantidade `5` para `POST /quiz/create`. O servidor cria imediatamente o registro do jogador no ranking daquela dificuldade.
 - O servidor devolve um UUID. A tela consulta `POST /quiz/question` a cada dois segundos, por no máximo vinte tentativas.
 - Quando as perguntas chegam, `QuizGame.vue` guarda a alternativa marcada para cada pergunta. A navegação permite voltar e corrigir uma escolha antes do envio.
-- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta e soma os acertos recebidos.
+- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta. Cada resposta correta soma um ponto ao quiz e atualiza a pontuação do mesmo registro no ranking.
 - Ao voltar ao menu, a interface chama `DELETE /quiz` para apagar o quiz que estava aberto e limpa o estado local.
 
 Essa separação ajuda a localizar mudanças: aparência e fluxo de tela ficam em `src/components`, formato dos dados fica em `src/types` e integração com o servidor fica em `src/service`.
@@ -327,6 +327,7 @@ Request:
 
 ```json
 {
+  "player_name": "Ana",
   "tema": "python",
   "quantidade": 5,
   "dificuldade": "mista"
@@ -339,7 +340,7 @@ Resposta:
 {"uuid":"codigo-gerado"}
 ```
 
-`tema` e `dificuldade` devem ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
+`player_name`, `tema` e `dificuldade` devem ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
 
 ### `POST /quiz/question`
 
@@ -390,7 +391,35 @@ Resposta:
 }
 ```
 
-A resposta é `null` enquanto o quiz não estiver concluído ou quando o enunciado não for encontrado.
+Uma resposta correta adiciona um ponto ao quiz e atualiza o registro do jogador no ranking da dificuldade correspondente. Reenviar uma resposta correta para a mesma pergunta não duplica o ponto. A resposta é `null` enquanto o quiz não estiver concluído ou quando o enunciado não for encontrado.
+
+### `GET /ranking/{difficulty}`
+
+Consulta a classificação da dificuldade informada. Um ranking ainda não criado retorna uma lista vazia:
+
+```json
+{"ranking":[]}
+```
+
+### `POST /ranking`
+
+Adiciona um jogador ao ranking correspondente à dificuldade, criando-o se ainda não existir. O nome e a pontuação também ficam registrados no quiz indicado:
+
+```json
+{
+  "player_name": "Ana",
+  "quiz_uuid": "codigo-gerado",
+  "score": 4,
+  "difficulty": "Fácil"
+}
+```
+
+Os registros são ordenados pela pontuação em ordem decrescente. A rota retorna `404` se o UUID do quiz não existir.
+No Redis, cada dificuldade é armazenada separadamente na chave `ranking-<dificuldade>`.
+
+### `DELETE /ranking/{difficulty}`
+
+Exclui por completo o ranking da dificuldade informada. Não exclui registros individuais.
 
 ### `DELETE /quiz`
 

@@ -12,6 +12,7 @@ export interface CriarQuizRequest {
     tema: string
     quantidade: number
     dificuldade: string
+    player_name: string
 } //interace para criar um quiz
 
 export interface BuscarQuizResponse {

@@ -26,6 +26,7 @@ async def create_quiz(data: QuizRequest) -> QuizCreatedResponse:
         tema=data.tema,
         quantidade=data.quantidade,
         dificuldade=data.dificuldade,
+        player_name=data.player_name,
     )
     return QuizCreatedResponse(uuid=quiz_uuid)
 

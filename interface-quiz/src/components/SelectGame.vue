@@ -5,6 +5,7 @@
   import QuizGame from './QuizGame.vue'
 
   const tema = ref('')
+  const playerName = ref('')
   const dificuldade = ref('')
   const uuid = ref('')
   const quiz = ref<BuscarQuizResponse | null> (null)
@@ -19,7 +20,12 @@
 
     try {
 
-      const id = await criarQuiz({tema: tema.value.trim(), quantidade: 5, dificuldade: dificuldade.value}) 
+      const id = await criarQuiz({
+        tema: tema.value.trim(),
+        quantidade: 5,
+        dificuldade: dificuldade.value,
+        player_name: playerName.value.trim(),
+      })
       uuid.value=id
       await esperarResposta(id)
 
@@ -59,6 +65,7 @@
       quiz.value = null
       uuid.value = ''
       tema.value = ''
+      playerName.value = ''
       dificuldade.value = ''
       return
     }
@@ -75,6 +82,7 @@
     quiz.value=null
     uuid.value=''
     tema.value=''
+    playerName.value=''
     dificuldade.value=''
 
   }
@@ -96,6 +104,7 @@
 
       <div v-if = "!quiz">
         
+        <input v-model="playerName" placeholder="Nome do jogador"/>
         <input v-model="tema" placeholder="Tema do quiz"/>
 
         <label for="dificuldade">Selecione uma dificuldade</label>        
@@ -111,7 +120,7 @@
         </select>
         
 
-        <button :disabled="carregando || !tema.trim() || !dificuldade" @click="gerarQuiz">
+        <button :disabled="carregando || !playerName.trim() || !tema.trim() || !dificuldade" @click="gerarQuiz">
           {{carregando ? 'Gerando...' : 'Criar quiz'}}
         </button>
 

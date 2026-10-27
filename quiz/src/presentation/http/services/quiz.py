@@ -5,6 +5,7 @@ from app.graph.graph import graph
 from domain.entities.InterpretAnswer import AnswerToInterpret
 from domain.entities.quiz import Quiz
 from infra.repository.quiz_repository import QuizRepository
+from infra.repository.ranking_repository import RankingRepository
 from infra.repository.redis_client import RedisClient
 from presentation.http.dto.quiz_dto import QuizDTO
 from presentation.http.services.interpret_answer import interpret_answer
@@ -14,9 +15,15 @@ logger = logging.getLogger(__name__)
 
 redis_client = RedisClient("REDIS_URL")
 repository = QuizRepository(redis_client)
+ranking_repository = RankingRepository(redis_client)
 
 
-async def create_quiz(tema: str, quantidade: int, dificuldade: str):
+async def create_quiz(
+    tema: str,
+    quantidade: int,
+    dificuldade: str,
+    player_name: str,
+):
     uuid = generate_quiz_uuid()
     try:
         logger.info(
@@ -26,7 +33,15 @@ async def create_quiz(tema: str, quantidade: int, dificuldade: str):
             quantidade,
             dificuldade,
         )
-        await repository.create(uuid)
+        await repository.create(uuid, player_name, dificuldade)
+        await ranking_repository.add_ranking(
+            {
+                "player_name": player_name,
+                "quiz_uuid": uuid,
+                "score": 0,
+                "difficulty": dificuldade,
+            }
+        )
 
         asyncio.create_task(
             process_quiz(
@@ -116,6 +131,8 @@ async def answer_quiz(quiz_uuid: str, enunciado: str, resposta: str):
 
         literal_answer = quiz_dto.get_answer(enunciado, resposta)
         if literal_answer is not None:
+            if literal_answer["resposta"]["correta"]:
+                await record_correct_answer(quiz_uuid, enunciado, data)
             return literal_answer
 
         question = quiz_dto.find_question(enunciado)
@@ -138,11 +155,27 @@ async def answer_quiz(quiz_uuid: str, enunciado: str, resposta: str):
             )
             return None
 
-        return quiz_dto.get_answer(enunciado, resolved_answer)
+        answer = quiz_dto.get_answer(enunciado, resolved_answer)
+        if answer is not None and answer["resposta"]["correta"]:
+            await record_correct_answer(quiz_uuid, enunciado, data)
+        return answer
 
     except Exception:
         logger.exception("Falha ao processar quiz uuid=%s", quiz_uuid)
         raise
+
+
+async def record_correct_answer(
+    quiz_uuid: str,
+    enunciado: str,
+    quiz_data: dict,
+) -> None:
+    score = await repository.record_correct_answer(quiz_uuid, enunciado)
+    await ranking_repository.update_score(
+        quiz_uuid=quiz_uuid,
+        difficulty=quiz_data["difficulty"],
+        score=score,
+    )
 
 
 async def status_check(quiz_uuid: str):
