@@ -37,6 +37,7 @@ const nomeValido = computed(() =>
     /\p{L}/u.test(nomeUsuario.value)
 )
 const ouvindo = ref(false)
+const lendo = ref(false)
 let controleAudio = 0
 
 async function retomarMusica() {
@@ -53,8 +54,18 @@ async function retomarMusica() {
 async function lerTexto() {
     if (ouvindo.value || enviando.value || respondida.value) return
 
+    if (lendo.value) {
+        controleAudio++
+        lendo.value = false
+        window.speechSynthesis.cancel()
+        await retomarMusica()
+        return
+    }
+
     const leituraAtual = ++controleAudio
+    lendo.value = true
     pausarMusica()
+    window.speechSynthesis.cancel()
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
     try{
         await falar(textoFalar)
@@ -65,7 +76,10 @@ async function lerTexto() {
         console.error(e)
         erro.value='Houve um erro ao ler o texto, tente novamente'
     } finally {
-        if (leituraAtual === controleAudio) await retomarMusica()
+        if (leituraAtual === controleAudio) {
+            lendo.value = false
+            await retomarMusica()
+        }
     }
 }
 
@@ -87,7 +101,14 @@ async function enviarResposta() {
     
     if (enviando.value || respondida.value || !alternativaSelecionada.value) return
 
-    if(window.speechSynthesis.speaking) {window.speechSynthesis.cancel()}
+    if (lendo.value) {
+        controleAudio++
+        lendo.value = false
+        window.speechSynthesis.cancel()
+        await retomarMusica()
+    } else if(window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel()
+    }
 
     enviando.value = true
     erro.value = ''
@@ -130,6 +151,7 @@ async function enviarRespostaAudio() {
     if (ouvindo.value) {pararOuvir(); return}
     
     controleAudio++
+    lendo.value = false
     window.speechSynthesis.cancel()
     ouvindo.value = true
     erro.value=''
@@ -268,7 +290,9 @@ function filtrarNome(event: Event) {
 
                 <!--#############################################BOTAO DE LER TEXTO-->
                 <div v-if="configuracoes.botao_voz">
-                    <button class="btn" :disabled="ouvindo || enviando || respondida" @click="lerTexto">ler texto</button>
+                    <button class="btn" :disabled="ouvindo || enviando || respondida" @click="lerTexto">
+                        {{ lendo ? 'parar leitura' : 'ler texto' }}
+                    </button>
                 </div>
                 
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
