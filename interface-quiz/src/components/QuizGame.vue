@@ -231,7 +231,7 @@ function mudarMusica() {
                     name="alternativa"
                     :value="alternativa"
                     v-model="alternativaSelecionada"
-                    :disabled="respondida"
+                    :disabled="respondida || enviando"
                     />
 
                     <span
@@ -255,7 +255,7 @@ function mudarMusica() {
             <div v-if="!respondida" class="actions">
 
                 <!--#############################################BOTAO DE ENVIAR RESPOSTA-->
-                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida || enviando" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
 
                 <!--#############################################BOTAO DE FALAR-->
                 <div v-if="configuracoes.botao_fala">
