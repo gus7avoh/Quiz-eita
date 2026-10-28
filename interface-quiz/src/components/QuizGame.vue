@@ -37,8 +37,10 @@ const nomeValido = computed(() =>
     /\p{L}/u.test(nomeUsuario.value)
 )
 const ouvindo = ref(false)
+let controleAudio = 0
 
 async function lerTexto() {
+    const leituraAtual = ++controleAudio
     pausarMusica()
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
     try{
@@ -46,10 +48,12 @@ async function lerTexto() {
         
     }
     catch(e) {
+        if (leituraAtual !== controleAudio) return
         console.error(e)
         erro.value='Houve um erro ao ler o texto, tente novamente'
+    } finally {
+        if (leituraAtual === controleAudio) despausarMusica()
     }
-    despausarMusica()
 }
 
 async function lerExplicacao() {
@@ -119,6 +123,7 @@ async function enviarRespostaAudio() {
     if (enviando.value || respondida.value) return
     if (ouvindo.value) {pararOuvir(); return}
     
+    controleAudio++
     window.speechSynthesis.cancel()
     ouvindo.value = true
     erro.value=''
