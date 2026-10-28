@@ -40,6 +40,8 @@ const ouvindo = ref(false)
 let controleAudio = 0
 
 async function lerTexto() {
+    if (ouvindo.value || enviando.value || respondida.value) return
+
     const leituraAtual = ++controleAudio
     pausarMusica()
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
@@ -258,7 +260,7 @@ function filtrarNome(event: Event) {
 
                 <!--#############################################BOTAO DE LER TEXTO-->
                 <div v-if="configuracoes.botao_voz">
-                    <button class="btn" @click="lerTexto">ler texto</button>
+                    <button class="btn" :disabled="ouvindo || enviando || respondida" @click="lerTexto">ler texto</button>
                 </div>
                 
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
