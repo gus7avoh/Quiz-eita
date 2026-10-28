@@ -30,7 +30,7 @@ class ApiKeyLease:
 
 
 class KeyManager:
-    total_keys = 100
+    total_keys = 107
 
     def __init__(self, cooldown_seconds: float = 2.0):
         self.cooldown_seconds = cooldown_seconds
