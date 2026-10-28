@@ -39,14 +39,17 @@ const nomeValido = computed(() =>
 const ouvindo = ref(false)
 
 async function lerTexto() {
+    pausarMusica()
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
     try{
-        falar(textoFalar)
+        await falar(textoFalar)
+        
     }
     catch(e) {
         console.error(e)
         erro.value='Houve um erro ao ler o texto, tente novamente'
     }
+    despausarMusica()
 }
 
 async function lerExplicacao() {
