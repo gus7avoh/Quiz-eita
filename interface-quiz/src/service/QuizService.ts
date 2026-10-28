@@ -1,8 +1,11 @@
 import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequest, Ranking, RespostaResponse, Usuario } from '../types/QuizTypes'
 
-// Empty by default means same-origin in production. Set VITE_API_URL only
-// when the API is intentionally hosted on another origin.
-const API_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '')
+// In production the API and the compiled frontend are served by the same
+// origin. A separate URL is only needed when the API is hosted elsewhere.
+// Keep the localhost fallback for the Vite development server so local work
+// continues to reach an API running on port 8000 without extra configuration.
+const configuredApiUrl = import.meta.env.VITE_API_URL
+const API_URL = (configuredApiUrl ?? (import.meta.env.DEV ? '' : '')).replace(/\/$/, '')
 
 //método de gerar quiz retornando um uuid em string
 export async function criarQuiz(req: CriarQuizRequest): Promise<string> {
