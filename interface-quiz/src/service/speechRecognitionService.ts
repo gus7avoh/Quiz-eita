@@ -33,7 +33,7 @@ export async function ouvindoUsuario(lang: string = "pt-BR"): Promise<string> {
   });
 }
 
-export function falar(text: string, lang: string = "pt-BR"): Promise<void> {
+ export async function falar(text: string, lang: string = "pt-BR"): Promise<void> {
   return new Promise((resolve, reject) => {
     const enunciado = new SpeechSynthesisUtterance(text);
     enunciado.lang = lang;

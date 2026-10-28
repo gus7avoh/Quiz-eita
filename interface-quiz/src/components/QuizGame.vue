@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 
     import { ref, computed } from 'vue'
-    import { responderQuiz } from '../service/QuizService';
+    import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
-    import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse} from '../types/QuizTypes'
+    import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse, Configuracoes} from '../types/QuizTypes'
     import { ouvindoUsuario, falar } from '../service/speechRecognitionService';
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
@@ -37,6 +37,13 @@ const nomeValido = computed(() =>
 )
 const ouvindo = ref(false)
 
+const configuracoes = ref<Configuracoes> ({
+    botao_acessibilidade: false,
+    botao_fala: false,
+    botao_voz: false,
+    botao_musica: true
+})
+
 async function lerTexto() {
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
     try{
@@ -53,7 +60,8 @@ async function lerExplicacao() {
     try{
         const textoAcerto = respostaResponse.value.correta ? "Você acertou!" : "Você errou!"
         const textoFalar = `${textoAcerto} Explicação: ${respostaResponse.value?.explicacao}`
-        falar(textoFalar)
+        await falar(textoFalar)
+        despausarMusica()
     }
     catch(e) {
         console.error(e)
@@ -81,7 +89,11 @@ async function enviarResposta(tentativa = 1) {
 
     try {
         respostaResponse.value = await responderQuiz(respostaRequest)
-        if(respostaResponse.value.correta) { acertos.value++ }
+        if(respostaResponse.value.correta) {
+            efeitoAcertar()
+            acertos.value++
+        }
+        else{efeitoErrar()}
     }
     catch(e) {
 
@@ -112,8 +124,10 @@ async function enviarRespostaAudio() {
     window.speechSynthesis.cancel()
     ouvindo.value = true
     erro.value=''
+    
 
     try {
+        pausarMusica()
         alternativaSelecionada.value = await ouvindoUsuario()
         if(alternativaSelecionada.value) {console.log(alternativaSelecionada.value)}
 
@@ -128,7 +142,8 @@ async function enviarRespostaAudio() {
     }
 
     await enviarResposta()
-    lerExplicacao()
+    await lerExplicacao()
+    
 }
 
 function proximaQuestao() {
@@ -148,6 +163,7 @@ function enivarRanking() {
     if(enviado.value || !nomeValido.value) return
 
     enviado.value = true
+    pausarMusica()
     emit('voltarMenu', { nome: nomeUsuario.value.trim(), pontos: acertos.value })
 }
 
@@ -158,9 +174,19 @@ function filtrarNome(event: Event) {
     input.value = nomeFiltrado
 }
 
+function mudarFala() {
+    if(configuracoes.value.botao_fala) {configuracoes.value.botao_fala=false}
+    else{configuracoes.value.botao_fala=true}
+}
+function mudarVoz() {
+    configuracoes.value.botao_voz ? configuracoes.value.botao_voz = false : configuracoes.value.botao_voz = true
+}
 </script>
 
 <template>
+    <button>Acessibilidade total</button>
+    <button @click="mudarVoz">Acessibilidade voz</button>
+    <button @click="mudarFala">acessibilidade fala</button>
     <div v-if="estadoQuiz === 'RESPONDENDO'" class="quiz">
 
         <div class="progress">
@@ -213,8 +239,13 @@ function filtrarNome(event: Event) {
             <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
             <div class="actions">
                 <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
-                <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
-                <button class="btn" @click="lerTexto">ler texto</button>
+                <div v-if="configuracoes.botao_fala">
+                    <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
+                </div>
+                <div v-if="configuracoes.botao_voz">
+                    <button class="btn" @click="lerTexto">ler texto</button>
+                </div>
+                
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>
             </div>
 

@@ -1,4 +1,5 @@
 import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequest, Ranking, RespostaResponse } from '../types/QuizTypes'
+import { usarMusicaFundo, usarEfeitoAudio } from '../composables/useBackgroundMusics';
 
 // Empty by default means same-origin in production. Set VITE_API_URL only
 // when the API is intentionally hosted on another origin.
@@ -108,4 +109,27 @@ export async function mockadoBuscarusuarios(): Promise <Ranking>{
     'impossivel': [{nome: 'ana', pontos: 50}],
     'misto': [{nome: 'eduardo', pontos: 10}]
     }
+}
+
+const { iniciar, pausar, continuar } = usarMusicaFundo()
+export function comecarMusica(dificuldade: string) {
+    iniciar(dificuldade)
+}
+
+export function pausarMusica() {
+    pausar()
+}
+
+export function despausarMusica() {
+    continuar()
+}
+
+const {usarEfeito} = usarEfeitoAudio()
+
+export function efeitoAcertar() {
+    usarEfeito(true)
+}
+
+export function efeitoErrar() {
+    usarEfeito(false)
 }
