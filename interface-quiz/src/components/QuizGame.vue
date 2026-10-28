@@ -83,7 +83,7 @@ async function lerExplicacao() {
     }
     
 }
-async function enviarResposta(tentativa = 1) {
+async function enviarResposta() {
     
     if (enviando.value || respondida.value || !alternativaSelecionada.value) return
 
@@ -92,43 +92,36 @@ async function enviarResposta(tentativa = 1) {
     enviando.value = true
     erro.value = ''
     respostaResponse.value = null
+    const respostaSelecionada = alternativaSelecionada.value
 
     const respostaRequest: RespostaRequest = ({
         uuid: props.uuid, 
         'enunciado': perguntaAtual.value.enunciado, 
-        'resposta_usuario': alternativaSelecionada.value!
+        'resposta_usuario': respostaSelecionada
     })
 
-    let tentarDeNovo = false
-
     try {
-        respostaResponse.value = await responderQuiz(respostaRequest)
-        if(respostaResponse.value.correta) {
-            efeitoAcertar()
-            acertos.value++
+        for (let tentativa = 1; tentativa <= 5; tentativa++) {
+            try {
+                respostaResponse.value = await responderQuiz(respostaRequest)
+                if(respostaResponse.value.correta) {
+                    efeitoAcertar()
+                    acertos.value++
+                }
+                else{efeitoErrar()}
+                return
+            } catch(e) {
+                console.error(e)
+                if(tentativa === 5) {
+                    erro.value='Houve um erro ao enviar a resposta, tente novamente'
+                    return
+                }
+                await new Promise(resolve => setTimeout(resolve, 500 * tentativa))
+            }
         }
-        else{efeitoErrar()}
-    }
-    catch(e) {
-
-        console.error(e)
-        if(tentativa >= 5) {erro.value='Houve um erro ao enviar a resposta, tente novamente'}
-        else if(tentativa <5) {tentarDeNovo = true}
-
-        }
-
-    finally{
-
+    } finally {
         enviando.value = false
-
     }
-
-    if(tentarDeNovo) {
-        await new Promise(r => setTimeout(r, 500 * tentativa))
-        await enviarResposta(tentativa + 1)
-    }
-    
-    
 }
 
 async function enviarRespostaAudio() {
