@@ -58,4 +58,10 @@ export const EnumQuizGame = {
 
 export type EstadoQuiz = (typeof EnumQuizGame)[keyof typeof EnumQuizGame]
 
+export type Configuracoes = {
+    botao_acessibilidade: boolean
+    botao_voz: boolean
+    botao_fala: boolean
+    botao_musica: boolean
+}
 
