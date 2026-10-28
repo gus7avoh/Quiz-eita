@@ -425,7 +425,9 @@ html body #app {
     .content_wrapper aside.ranking-open {
         position: fixed;
         inset: 0;
-        z-index: 30;
+        /* O ranking aberto ocupa a tela e precisa ficar acima do botão de
+           configurações, que permanece disponível no restante do fluxo. */
+        z-index: 50;
         display: flex;
         flex-direction: column;
         padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
