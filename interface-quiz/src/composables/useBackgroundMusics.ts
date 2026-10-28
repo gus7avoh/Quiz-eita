@@ -40,13 +40,13 @@ export function usarMusicaFundo() {
         audio.pause()
         tocando.value=false
     }
-    function mudarVolume(volume: number) {
-        audio.volume=volume
+    function mudarVolume(volumeAudio: number) {
+        audio.volume=volumeAudio
     }
     function continuar() {
         audio.play()
     }
-    return { iniciar, pausar, continuar, tocando }
+    return { iniciar, pausar, continuar, mudarVolume }
 }
 
 export function usarEfeitoAudio() {

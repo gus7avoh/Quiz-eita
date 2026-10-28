@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 
     import { ref, computed } from 'vue'
-    import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz } from '../service/QuizService';
+    import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz, mudarVolumeMusica } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse, Configuracoes} from '../types/QuizTypes'
     import { ouvindoUsuario, falar } from '../service/speechRecognitionService';
@@ -181,10 +181,21 @@ function mudarFala() {
 function mudarVoz() {
     configuracoes.value.botao_voz ? configuracoes.value.botao_voz = false : configuracoes.value.botao_voz = true
 }
+function mudarMusica() {
+    if (configuracoes.value.botao_musica) {
+        configuracoes.value.botao_musica = false
+        mudarVolumeMusica(0)
+    }
+    
+    else {
+        configuracoes.value.botao_musica = true
+        mudarVolumeMusica(1)
+    }
+}
 </script>
 
 <template>
-    <button>Acessibilidade total</button>
+    <button @click="mudarMusica">Música</button>
     <button @click="mudarVoz">Acessibilidade voz</button>
     <button @click="mudarFala">acessibilidade fala</button>
     <div v-if="estadoQuiz === 'RESPONDENDO'" class="quiz">

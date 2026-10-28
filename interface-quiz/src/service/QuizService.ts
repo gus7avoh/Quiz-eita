@@ -111,7 +111,7 @@ export async function mockadoBuscarusuarios(): Promise <Ranking>{
     }
 }
 
-const { iniciar, pausar, continuar } = usarMusicaFundo()
+const { iniciar, pausar, continuar, mudarVolume } = usarMusicaFundo()
 export function comecarMusica(dificuldade: string) {
     iniciar(dificuldade)
 }
@@ -122,6 +122,10 @@ export function pausarMusica() {
 
 export function despausarMusica() {
     continuar()
+}
+
+export function mudarVolumeMusica(volume: number) {
+    mudarVolume(volume)
 }
 
 const {usarEfeito} = usarEfeitoAudio()
