@@ -1,25 +1,22 @@
-from app.graph.graph import graph
-import asyncio
-
 import json
 import os
 
-from infra.repository.redis_client import RedisClient
-    
+from app.graph.graph import graph
+
+
 def main():
-    result = graph.invoke({
-          "tema": "Jogos",
-          "quantidade": 2,
-          "dificuldade": "facil",
-          "perguntas": [],
-      })
+    result = graph.invoke(
+        {
+            "tema": "Jogos",
+            "quantidade": 2,
+            "dificuldade": "facil",
+            "perguntas": [],
+        }
+    )
 
     dados = {
         **result,
-        "perguntas": [
-            pergunta.model_dump()
-            for pergunta in result["perguntas"]
-        ]
+        "perguntas": [pergunta.model_dump() for pergunta in result["perguntas"]],
     }
 
     arquivo = os.path.join(
@@ -27,29 +24,19 @@ def main():
     )
 
     with open(arquivo, "w", encoding="utf-8") as f:
-        json.dump(
-            dados,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
+        json.dump(dados, f, ensure_ascii=False, indent=4)
 
-
-        
     #  redis_client = RedisClient()
     #  conn = redis_client.get_connection()
 
     #  async def test_redis():
     #      print(await conn.ping())
 
-
     #  asyncio.run(test_redis())
 
 
 if __name__ == "__main__":
     main()
-
-
 
 
 # import asyncio
@@ -72,6 +59,3 @@ if __name__ == "__main__":
 
 
 # asyncio.run(main())
-
-
-

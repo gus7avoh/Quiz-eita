@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { Ranking, Usuario } from '../types/QuizTypes';
-import { mockadoBuscarusuarios } from '../service/QuizService';
+import { buscarUsuarios } from '../service/QuizService';
 
 const lista_ranking = ref<Ranking>({
     'facil': [],
@@ -11,70 +11,40 @@ const lista_ranking = ref<Ranking>({
     'misto': []
 })
 
-const lista_atual = ref<Usuario[] | null> ([{'nome': 'davi', 'pontos': 20}])
+const dificuldadeAtual = ref<keyof Ranking>('facil')
+const lista_atual = ref<Usuario[]>([])
+const carregando = ref(false)
+const erro = ref('')
 let timer: ReturnType<typeof setInterval> | undefined
 
 
 async function carregarRanking() {
-
+    carregando.value = true
+    erro.value = ''
     try{
-        lista_ranking.value = await mockadoBuscarusuarios()
+        lista_ranking.value = await buscarUsuarios()
+        lista_atual.value = lista_ranking.value[dificuldadeAtual.value]
 
     } catch (error) {
         console.error('Erro ao buscar ranking:', error)
+        erro.value = 'Não foi possível carregar o ranking.'
+    } finally {
+        carregando.value = false
     }
 }
 
 onMounted(() => {
-
     carregarRanking()
-    timer = setInterval(async () => {
-        
-        await adicionarUsuariosAleatorios()
-        await organizarLista()
-    }, 10_000)
-    
+    timer = setInterval(carregarRanking, 40_000)
 })
 
-onUnmounted(() => {clearInterval(timer)})
+onUnmounted(() => {
+    if (timer) clearInterval(timer)
+})
 
-function mudarLista(ranking_dificuldade: string) {
-    switch(ranking_dificuldade) {
-
-        case 'facil':
-            lista_atual.value=lista_ranking.value.facil
-            break
-
-        case 'medio':
-            lista_atual.value=lista_ranking.value.medio
-            break
-
-        case 'dificil':
-            lista_atual.value=lista_ranking.value.dificil
-            break
-
-        case 'impossivel':
-            lista_atual.value=lista_ranking.value.impossivel
-            break
-
-        case 'misto':
-            lista_atual.value=lista_ranking.value.misto
-            break
-    }
-}
-async function adicionarUsuariosAleatorios() {
-    lista_ranking.value.facil.push({nome: 'kratos', pontos: Math.floor(Math.random() * 100)})
-        lista_ranking.value.medio.push({nome: 'Allay', pontos: Math.floor(Math.random() * 100)})
-        lista_ranking.value.dificil.push({nome: 'Steve', pontos: Math.floor(Math.random() * 100)})
-        lista_ranking.value.impossivel.push({nome: 'madagascar', pontos: Math.floor(Math.random() * 100)})
-        lista_ranking.value.misto.push({nome: 'Minto', pontos: Math.floor(Math.random() * 100)})
-}
-async function organizarLista() {
-    lista_ranking.value.facil.sort((a, b) => b.pontos - a.pontos)
-    lista_ranking.value.medio.sort((a, b) => b.pontos - a.pontos)
-    lista_ranking.value.dificil.sort((a, b) => b.pontos - a.pontos)
-    lista_ranking.value.impossivel.sort((a, b) => b.pontos - a.pontos)
-    lista_ranking.value.misto.sort((a, b) => b.pontos - a.pontos)
+function mudarLista(dificuldade: keyof Ranking) {
+    dificuldadeAtual.value = dificuldade
+    lista_atual.value = lista_ranking.value[dificuldade]
 }
 
 </script>
@@ -90,27 +60,27 @@ async function organizarLista() {
             <div class="radio-input" role="radiogroup" aria-label="Dificuldade do ranking">
 
                 <label class="label">
-                    <input type="radio" name="value-radio" @click="mudarLista('facil')"/>
+                    <input type="radio" name="value-radio" value="facil" v-model="dificuldadeAtual" @change="mudarLista('facil')"/>
                     <span class="check"><span class="dot dot-facil"></span>Fácil</span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio"  @click="mudarLista('medio')"/>
+                    <input type="radio" name="value-radio" value="medio" v-model="dificuldadeAtual" @change="mudarLista('medio')"/>
                     <span class="check"><span class="dot dot-medio"></span>Médio</span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" @click="mudarLista('dificil')"/>
+                    <input type="radio" name="value-radio" value="dificil" v-model="dificuldadeAtual" @change="mudarLista('dificil')"/>
                     <span class="check"><span class="dot dot-dificil"></span>Difícil</span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" @click="mudarLista('impossivel')"/>
+                    <input type="radio" name="value-radio" value="impossivel" v-model="dificuldadeAtual" @change="mudarLista('impossivel')"/>
                     <span class="check"><span class="dot dot-impossivel"></span>Impossível</span>
                 </label>
 
                 <label class="label">
-                    <input type="radio" name="value-radio" @click="mudarLista('misto')"/>
+                    <input type="radio" name="value-radio" value="misto" v-model="dificuldadeAtual" @change="mudarLista('misto')"/>
                     <span class="check"><span class="dot dot-misto"></span>Misto</span>
                 </label>
 
@@ -120,7 +90,15 @@ async function organizarLista() {
 
         <div class="ranking-list">
 
-            <p v-if="!lista_atual || !lista_atual.length" class="empty">
+            <p v-if="carregando" class="empty">
+                Carregando ranking...
+            </p>
+
+            <p v-else-if="erro" class="empty" role="alert">
+                {{ erro }}
+            </p>
+
+            <p v-else-if="!lista_atual.length" class="empty">
                 Ainda não há jogadores nesta dificuldade.
             </p>
 

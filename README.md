@@ -138,14 +138,14 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 
 Variáveis usadas:
 
-| Variável | Finalidade |
-|---|---|
-| `REDIS_URL` | estados dos quizzes e resultados |
-| `REDIS_URL_RAG` | documentos, embeddings e contexto RAG |
-| `EITA_1` até `EITA_58` | chaves disponíveis para o Gemini; pelo menos uma é necessária |
-| `GOOGLE_DRIVE_FOLDER_ID` | pasta de documentos usada na sincronização |
-| `GOOGLE_DRIVE_CREDENTIALS_NAME` | caminho do JSON da conta de serviço do Google Drive |
-| `CORS_ORIGINS` | origens permitidas quando frontend e API estão em domínios diferentes |
+| Variável                        | Finalidade                                                            |
+| ------------------------------- | --------------------------------------------------------------------- |
+| `REDIS_URL`                     | estados dos quizzes e resultados                                      |
+| `REDIS_URL_RAG`                 | documentos, embeddings e contexto RAG                                 |
+| `EITA_1` até `EITA_58`          | chaves disponíveis para o Gemini; pelo menos uma é necessária         |
+| `GOOGLE_DRIVE_FOLDER_ID`        | pasta de documentos usada na sincronização                            |
+| `GOOGLE_DRIVE_CREDENTIALS_NAME` | caminho do JSON da conta de serviço do Google Drive                   |
+| `CORS_ORIGINS`                  | origens permitidas quando frontend e API estão em domínios diferentes |
 
 As chaves `EITA_1` até `EITA_58` são opcionais individualmente. Cadastre apenas as que existirem. Nunca publique valores reais no README, no Git ou em logs.
 
@@ -205,7 +205,7 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 Resposta esperada:
 
 ```json
-{"status":"ok"}
+{ "status": "ok" }
 ```
 
 ## Frontend
@@ -214,25 +214,25 @@ O frontend fica em `interface-quiz/` e é uma aplicação Vue 3 escrita em TypeS
 
 ### Telas e componentes
 
-| Arquivo | Responsabilidade |
-|---|---|
-| `src/App.vue` | ponto de entrada visual; monta a página do quiz e a área de teste de voz |
-| `src/components/FrontPage.vue` | organiza o título, o ranking lateral e a área principal do jogo |
-| `src/components/SelectGame.vue` | formulário de tema e dificuldade, criação do quiz e espera pelas perguntas |
-| `src/components/QuizGame.vue` | exibe uma pergunta por vez, permite voltar ou avançar e envia as respostas |
-| `src/components/RankingBar.vue` | apresenta o ranking visual atual, que ainda usa nomes fixos |
-| `src/service/QuizService.ts` | concentra as chamadas HTTP para criar, consultar, responder e excluir quizzes |
-| `src/types/QuizTypes.ts` | descreve em TypeScript o formato dos dados trocados com a API |
-| `src/speechRecognitionService.ts` | encapsula fala do navegador e reconhecimento de voz |
-| `src/testeVoz.vue` | oferece os botões de teste de fala e escuta |
+| Arquivo                           | Responsabilidade                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `src/App.vue`                     | ponto de entrada visual; monta a página do quiz e a área de teste de voz      |
+| `src/components/FrontPage.vue`    | organiza o título, o ranking lateral e a área principal do jogo               |
+| `src/components/SelectGame.vue`   | formulário de tema e dificuldade, criação do quiz e espera pelas perguntas    |
+| `src/components/QuizGame.vue`     | exibe uma pergunta por vez, permite voltar ou avançar e envia as respostas    |
+| `src/components/RankingBar.vue`   | apresenta a área visual do ranking                                            |
+| `src/service/QuizService.ts`      | concentra as chamadas HTTP para criar, consultar, responder e excluir quizzes |
+| `src/types/QuizTypes.ts`          | descreve em TypeScript o formato dos dados trocados com a API                 |
+| `src/speechRecognitionService.ts` | encapsula fala do navegador e reconhecimento de voz                           |
+| `src/testeVoz.vue`                | oferece os botões de teste de fala e escuta                                   |
 
 ### O que acontece no frontend
 
-- Ao clicar em **Criar quiz**, `SelectGame.vue` envia tema, dificuldade e a quantidade `5` para `POST /quiz/create`.
+- Ao clicar em **Criar quiz**, `SelectGame.vue` envia tema, dificuldade e a quantidade `5` para `POST /quiz/create`. O nome ainda não existe nessa etapa.
 - O servidor devolve um UUID. A tela consulta `POST /quiz/question` a cada dois segundos, por no máximo vinte tentativas.
 - Quando as perguntas chegam, `QuizGame.vue` guarda a alternativa marcada para cada pergunta. A navegação permite voltar e corrigir uma escolha antes do envio.
-- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta e soma os acertos recebidos.
-- Ao voltar ao menu, a interface chama `DELETE /quiz` para apagar o quiz que estava aberto e limpa o estado local.
+- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta. Cada resposta correta soma um ponto no estado temporário do quiz.
+- Depois que o jogador informa o nome, a interface chama `POST /ranking` com `nome`, `pontos` e `dificuldade`. Só então chama `DELETE /quiz` para apagar o quiz que estava aberto e limpa o estado local.
 
 Essa separação ajuda a localizar mudanças: aparência e fluxo de tela ficam em `src/components`, formato dos dados fica em `src/types` e integração com o servidor fica em `src/service`.
 
@@ -273,16 +273,16 @@ Para alterar a interface, edite o componente correspondente, rode `npm run build
 
 ### Onde fazer cada tipo de mudança
 
-| Se você quer... | Comece por... |
-|---|---|
-| mudar cores, textos ou a disposição da página | `interface-quiz/src/components/` e os estilos do componente |
-| mudar o formulário ou a quantidade de perguntas exibidas | `interface-quiz/src/components/SelectGame.vue` |
-| mudar a navegação, alternativas ou resultado | `interface-quiz/src/components/QuizGame.vue` |
-| alterar uma chamada feita pelo navegador | `interface-quiz/src/service/QuizService.ts` |
-| alterar o formato de um request ou response | `interface-quiz/src/types/QuizTypes.ts` e os schemas em `quiz/src/presentation/http/schemas/` |
-| criar ou alterar uma rota | `quiz/src/presentation/http/routes/` e o serviço correspondente |
-| mudar como as perguntas são geradas | `quiz/src/app/graph/`, `quiz/src/app/prompts/` e `quiz/src/infra/llm/` |
-| alterar a imagem publicada | `Dockerfile` e as configurações do Dokploy |
+| Se você quer...                                          | Comece por...                                                                                 |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| mudar cores, textos ou a disposição da página            | `interface-quiz/src/components/` e os estilos do componente                                   |
+| mudar o formulário ou a quantidade de perguntas exibidas | `interface-quiz/src/components/SelectGame.vue`                                                |
+| mudar a navegação, alternativas ou resultado             | `interface-quiz/src/components/QuizGame.vue`                                                  |
+| alterar uma chamada feita pelo navegador                 | `interface-quiz/src/service/QuizService.ts`                                                   |
+| alterar o formato de um request ou response              | `interface-quiz/src/types/QuizTypes.ts` e os schemas em `quiz/src/presentation/http/schemas/` |
+| criar ou alterar uma rota                                | `quiz/src/presentation/http/routes/` e o serviço correspondente                               |
+| mudar como as perguntas são geradas                      | `quiz/src/app/graph/`, `quiz/src/app/prompts/` e `quiz/src/infra/llm/`                        |
+| alterar a imagem publicada                               | `Dockerfile` e as configurações do Dokploy                                                    |
 
 ### Configuração da URL da API
 
@@ -316,7 +316,7 @@ Verifica se o processo FastAPI está ativo.
 Resposta:
 
 ```json
-{"status":"ok"}
+{ "status": "ok" }
 ```
 
 ### `POST /quiz/create`
@@ -336,10 +336,28 @@ Request:
 Resposta:
 
 ```json
-{"uuid":"codigo-gerado"}
+{ "uuid": "codigo-gerado" }
 ```
 
 `tema` e `dificuldade` devem ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
+
+### `POST /ranking`
+
+Registra o resultado depois que o jogador termina a partida:
+
+```json
+{
+  "nome": "Ana",
+  "pontos": 4,
+  "dificuldade": "Fácil"
+}
+```
+
+O nome não participa da criação do quiz. O ranking é persistido por dificuldade e a resposta indica se o registro foi adicionado:
+
+```json
+{ "added": true }
+```
 
 ### `POST /quiz/question`
 
@@ -398,17 +416,14 @@ Exclui um ou mais quizzes. O corpo da requisição é:
 
 ```json
 {
-  "list_uuid": [
-    {"uuid": "codigo-gerado"},
-    {"uuid": "outro-codigo"}
-  ]
+  "list_uuid": [{ "uuid": "codigo-gerado" }, { "uuid": "outro-codigo" }]
 }
 ```
 
 Resposta:
 
 ```json
-{"excluded":true}
+{ "excluded": true }
 ```
 
 ## Estados e armazenamento no Redis
@@ -500,15 +515,15 @@ O arquivo `.env` da raiz não é copiado para a imagem. Em um servidor, forneça
 
 Na aplicação do Dokploy, use:
 
-| Campo | Valor |
-|---|---|
-| Origem | repositório GitHub `Quiz-eita` |
-| Branch | `main` |
-| Build Type | `Dockerfile` |
-| Dockerfile | `Dockerfile` |
-| Context Path | `.` ou `/`, conforme a interface |
-| Stage | `production` |
-| Porta do container | `8000` |
+| Campo              | Valor                            |
+| ------------------ | -------------------------------- |
+| Origem             | repositório GitHub `Quiz-eita`   |
+| Branch             | `main`                           |
+| Build Type         | `Dockerfile`                     |
+| Dockerfile         | `Dockerfile`                     |
+| Context Path       | `.` ou `/`, conforme a interface |
+| Stage              | `production`                     |
+| Porta do container | `8000`                           |
 
 Cadastre os segredos e variáveis no ambiente do Dokploy. Não dependa do `.env` local:
 
@@ -543,16 +558,16 @@ Valor: quiz-eita.com.br
 
 No domínio do Dokploy, use:
 
-| Campo | Valor |
-|---|---|
-| Host | `quiz-eita.com.br` |
-| Path | `/` |
-| Internal Path | `/` |
-| Strip Path | desligado |
-| Container Port | `8000` |
-| Custom Entrypoint | desligado |
-| HTTPS | ligado |
-| Certificate Provider | Let's Encrypt |
+| Campo                | Valor              |
+| -------------------- | ------------------ |
+| Host                 | `quiz-eita.com.br` |
+| Path                 | `/`                |
+| Internal Path        | `/`                |
+| Strip Path           | desligado          |
+| Container Port       | `8000`             |
+| Custom Entrypoint    | desligado          |
+| HTTPS                | ligado             |
+| Certificate Provider | Let's Encrypt      |
 
 Não use o endereço `sslip.io` para o certificado. Ele é útil para apontamento HTTP, mas não oferece SSL/HTTPS próprio.
 
