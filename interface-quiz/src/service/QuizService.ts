@@ -1,9 +1,11 @@
-import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequest, Ranking, RespostaResponse } from '../types/QuizTypes'
-import { usarMusicaFundo, usarEfeitoAudio } from '../composables/useBackgroundMusics';
+import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequest, Ranking, RespostaResponse, Usuario } from '../types/QuizTypes'
 
-// Empty by default means same-origin in production. Set VITE_API_URL only
-// when the API is intentionally hosted on another origin.
-const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
+// In production the API and the compiled frontend are served by the same
+// origin. A separate URL is only needed when the API is hosted elsewhere.
+// Keep the localhost fallback for the Vite development server so local work
+// continues to reach an API running on port 8000 without extra configuration.
+const configuredApiUrl = import.meta.env.VITE_API_URL
+const API_URL = (configuredApiUrl ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000' : '')).replace(/\/$/, '')
 
 //método de gerar quiz retornando um uuid em string
 export async function criarQuiz(req: CriarQuizRequest): Promise<string> {
@@ -72,18 +74,39 @@ export async function deletarQuiz(request: DeletarRequest): Promise <boolean> {
     
     return data.excluded
 }
-//Método para puxar todos os usuarios
-export async function buscarUsuarios(): Promise <Ranking>{ 
-    const response = await fetch(`${API_URL}/ranking`, {
+const dificuldadesRanking = {
+    facil: 'Fácil',
+    medio: 'Médio',
+    dificil: 'Difícil',
+    impossivel: 'Impossível',
+    misto: 'Misto',
+} as const
+
+export type DificuldadeRanking = keyof typeof dificuldadesRanking
+
+export async function buscarRanking(dificuldade: string): Promise<Usuario[]> {
+    const response = await fetch(`${API_URL}/ranking/${encodeURIComponent(dificuldade)}`, {
         method: 'GET',
-        headers: { 'Content-Type' : 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
     })
 
-    if(!response.ok) throw new Error(`Houve um erro ao buscar usuarios: ${response.status}`)
-    
-    const data = await response.json()
-    
-    return data
+    if(!response.ok) throw new Error(`Houve um erro ao buscar o ranking: ${response.status}`)
+
+    const data: { ranking?: Usuario[] } = await response.json()
+    return data.ranking ?? []
+}
+
+export async function buscarUsuarios(): Promise<Ranking>{
+    const entradas = Object.entries(dificuldadesRanking) as [DificuldadeRanking, string][]
+    const resultados = await Promise.all(
+        entradas.map(async ([chave, dificuldade]) => [chave, await buscarRanking(dificuldade)] as const),
+    )
+
+    const ranking = {} as Ranking
+    for (const [chave, lista] of resultados) {
+        ranking[chave] = lista
+    }
+    return ranking
 }
 
 //Método para adicionar um usuario com pontuação no ranking
@@ -99,41 +122,4 @@ export async function adicionarUsuario(nome: string, pontos: number, dificuldade
     const data = await response.json()
     
     return data.added
-}
-
-export async function mockadoBuscarusuarios(): Promise <Ranking>{
-    return {
-    'facil': [{nome: 'davi', pontos: 20}],
-    'medio': [{nome: 'gustavo', pontos: 30}],
-    'dificil': [{nome: 'matheus', pontos: 40}],
-    'impossivel': [{nome: 'ana', pontos: 50}],
-    'misto': [{nome: 'eduardo', pontos: 10}]
-    }
-}
-
-const { iniciar, pausar, continuar, mudarVolume } = usarMusicaFundo()
-export function comecarMusica(dificuldade: string) {
-    iniciar(dificuldade)
-}
-
-export function pausarMusica() {
-    pausar()
-}
-
-export function despausarMusica() {
-    continuar()
-}
-
-export function mudarVolumeMusica(volume: number) {
-    mudarVolume(volume)
-}
-
-const {usarEfeito} = usarEfeitoAudio()
-
-export function efeitoAcertar() {
-    usarEfeito(true)
-}
-
-export function efeitoErrar() {
-    usarEfeito(false)
 }

@@ -1,8 +1,12 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
-  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario, comecarMusica } from '../service/QuizService'
+  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario } from '../service/QuizService'
   import type { BuscarQuizResponse, DeletarRequest, Usuario } from '../types/QuizTypes'
   import QuizGame from './QuizGame.vue'
+
+  const emit = defineEmits<{
+    (event: 'quiz-ativo', ativo: boolean): void
+  }>()
 
   const tema = ref('')
   const temaPredefinido = ref('')
@@ -44,8 +48,7 @@
       const id = await criarQuiz({tema: temaSelecionado, quantidade: 5, dificuldade: dificuldade.value})
       uuid.value=id
       await esperarResposta(id)
-      comecarMusica(dificuldade.value)
-      console.log(dificuldade.value)
+      if (quiz.value) emit('quiz-ativo', true)
 
     }
 
@@ -88,6 +91,7 @@
     
     if (!uuid.value) {
       quiz.value = null
+      emit('quiz-ativo', false)
       uuid.value = ''
       tema.value = ''
       temaPredefinido.value = ''
@@ -105,6 +109,7 @@
     
 
     quiz.value=null
+    emit('quiz-ativo', false)
     uuid.value=''
     tema.value=''
     temaPredefinido.value = ''

@@ -1,6 +1,14 @@
 <script lang="ts" setup>
+import { ref, watch } from 'vue'
 import RankingBar from './RankingBar.vue'
 import SelectGame from './SelectGame.vue';
+
+const rankingAberto = ref(false)
+const quizEmJogo = ref(false)
+
+watch(quizEmJogo, (emJogo) => {
+    if (emJogo) rankingAberto.value = false
+})
 </script>
 
 <template>
@@ -13,15 +21,40 @@ import SelectGame from './SelectGame.vue';
 
         <div class="content_wrapper">
 
-            <aside>
+            <aside
+                id="ranking-mobile-panel"
+                :class="{ 'ranking-open': rankingAberto }"
+                :role="rankingAberto ? 'dialog' : undefined"
+                :aria-modal="rankingAberto ? 'true' : undefined"
+                :aria-labelledby="rankingAberto ? 'ranking-mobile-title' : undefined"
+            >
+                <div class="ranking-mobile-header">
+                    <h2 id="ranking-mobile-title">Ranking</h2>
+                    <button class="ranking-close" type="button" aria-label="Fechar ranking" @click="rankingAberto = false">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
                 <RankingBar/>
             </aside>
 
             <main>
-                <SelectGame/>
+                <SelectGame @quiz-ativo="quizEmJogo = $event" />
             </main>
 
         </div>
+
+        <nav v-if="!quizEmJogo" class="mobile-bottom-nav" aria-label="Menu da tela de criação">
+            <button
+                class="ranking-toggle"
+                type="button"
+                :aria-expanded="rankingAberto"
+                aria-controls="ranking-mobile-panel"
+                @click="rankingAberto = true"
+            >
+                <span class="ranking-toggle-icon" aria-hidden="true">★</span>
+                <span>Ranking</span>
+            </button>
+        </nav>
 
     </section>
 </template>
@@ -351,6 +384,128 @@ html body #app {
         grid-row: 2;
         height: auto;
         min-height: 0;
+    }
+}
+
+.mobile-bottom-nav {
+    display: none;
+}
+
+.ranking-mobile-header {
+    display: none;
+}
+
+@media (max-width: 48rem) {
+    .janela {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+
+    .content_wrapper {
+        grid-template-rows: minmax(0, 1fr);
+        overflow: hidden;
+    }
+
+    .content_wrapper aside {
+        display: none;
+    }
+
+    .content_wrapper aside.ranking-open {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+        background: var(--ink);
+        color: #fff;
+    }
+
+    .content_wrapper aside.ranking-open :deep(.side-bar) {
+        position: relative;
+        inset: auto;
+        flex: 1;
+        height: auto;
+        padding: 8px 0 0;
+        border-radius: 0;
+    }
+
+    .content_wrapper main {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .mobile-bottom-nav {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+        display: flex;
+        justify-content: center;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+        background: rgba(20, 18, 59, 0.96);
+        box-shadow: 0 -8px 24px rgba(20, 18, 59, 0.18);
+    }
+
+    .ranking-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: min(100%, 22rem);
+        min-height: 48px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--sun);
+        color: var(--ink);
+        font: 800 1rem/1 var(--font-body);
+        cursor: pointer;
+    }
+
+    .ranking-toggle:focus-visible,
+    .ranking-close:focus-visible {
+        outline: 3px solid var(--sun);
+        outline-offset: 3px;
+    }
+
+    .ranking-toggle-icon {
+        font-size: 1.15rem;
+    }
+
+    .ranking-mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .ranking-mobile-header h2 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 1.35rem;
+        line-height: 1.1;
+    }
+
+    .ranking-close {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        font: 400 2rem/1 var(--font-body);
+        cursor: pointer;
+    }
+
+    .content_wrapper aside.ranking-open :deep(.title h1) {
+        display: none;
+    }
+
+    .content_wrapper aside.ranking-open :deep(.ranking-list) {
+        padding-right: 0;
     }
 }
 

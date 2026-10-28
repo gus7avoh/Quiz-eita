@@ -536,7 +536,7 @@ GOOGLE_DRIVE_FOLDER_ID=id-da-pasta
 GOOGLE_DRIVE_CREDENTIALS_NAME=/run/secrets/google-drive.json
 ```
 
-Se o frontend e a API usarem o mesmo domínio, não defina `VITE_API_URL`. Se forem domínios diferentes, `VITE_API_URL` precisa estar disponível durante o build do frontend e `CORS_ORIGINS` precisa conter a origem pública do frontend.
+Se o frontend e a API usarem o mesmo domínio, não defina `VITE_API_URL`; o build de produção usará chamadas relativas como `/quiz/create`. No Dokploy, essa variável só é necessária durante o build quando a API estiver em outro domínio. Se forem domínios diferentes, `VITE_API_URL` precisa estar disponível durante o build do frontend e `CORS_ORIGINS` precisa conter a origem pública do frontend.
 
 ### Domínio e HTTPS
 
