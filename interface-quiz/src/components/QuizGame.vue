@@ -65,7 +65,7 @@ async function lerExplicacao() {
     }
     catch(e) {
         console.error(e)
-        erro.value='Houve um erro ao ler a explicação, tente novamente'
+        
     }
     
 }
@@ -148,6 +148,8 @@ async function enviarRespostaAudio() {
 }
 
 function proximaQuestao() {
+
+    if(window.speechSynthesis.speaking) {window.speechSynthesis.cancel()}
     
     if(indice.value < props.perguntas.length - 1) {
         indice.value++
