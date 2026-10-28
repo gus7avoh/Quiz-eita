@@ -5,7 +5,7 @@ import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequ
 // Keep the localhost fallback for the Vite development server so local work
 // continues to reach an API running on port 8000 without extra configuration.
 const configuredApiUrl = import.meta.env.VITE_API_URL
-const API_URL = (configuredApiUrl ?? (import.meta.env.DEV ? '' : '')).replace(/\/$/, '')
+const API_URL = (configuredApiUrl ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000' : '')).replace(/\/$/, '')
 
 //método de gerar quiz retornando um uuid em string
 export async function criarQuiz(req: CriarQuizRequest): Promise<string> {
