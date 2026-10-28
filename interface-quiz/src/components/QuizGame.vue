@@ -123,13 +123,24 @@ async function enviarRespostaAudio() {
 
     try {
         pausarMusica()
-        alternativaSelecionada.value = await ouvindoUsuario()
-        if(alternativaSelecionada.value) {console.log(alternativaSelecionada.value)}
+        const respostaFalada = await ouvindoUsuario()
+        if (!respostaFalada.trim()) {
+            erro.value = 'Não ouvi uma resposta. Tente novamente.'
+            despausarMusica()
+            return
+        }
+        alternativaSelecionada.value = respostaFalada
 
     } catch (e) {
         console.error(e)
         erro.value='Houve um erro ao ouvir a resposta, tente novamente'
-        falar('Houve um erro ao ouvir a resposta, tente novamente')
+        try {
+            await falar('Houve um erro ao ouvir a resposta, tente novamente')
+        } catch (erroFala) {
+            console.error(erroFala)
+        } finally {
+            despausarMusica()
+        }
         return
 
     } finally {
