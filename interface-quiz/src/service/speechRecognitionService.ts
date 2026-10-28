@@ -10,12 +10,14 @@ async function garantirPermissaoMicrofone(): Promise<void> {
   }
 }
 
+let reconhecimentoAtual: SpeechRecognition | null = null
 
 export async function ouvindoUsuario(lang: string = "pt-BR"): Promise<string> {
   await garantirPermissaoMicrofone();
 
   return new Promise((resolve, reject) => {
     const Reconhecimento = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    
 
     if (!Reconhecimento) {
       reject(new Error("Seu navegador não suporta reconhecimento de voz."));
@@ -23,14 +25,31 @@ export async function ouvindoUsuario(lang: string = "pt-BR"): Promise<string> {
     }
 
     const reconhecimento = new Reconhecimento();
+    reconhecimentoAtual = reconhecimento
     reconhecimento.lang = lang;
     reconhecimento.interimResults = false;
+    let texto = ""
 
-    reconhecimento.onresult = (event) => resolve(event.results[0][0].transcript);
+
+
+    reconhecimento.onresult = (event) => {
+      texto = event.results[0][0].transcript
+    }
     reconhecimento.onerror = (event) => reject(new Error(event.error));
+
+    reconhecimento.onend = () => {
+      console.log("onde disparou")
+      reconhecimentoAtual = null;
+      resolve(texto)
+    }
 
     reconhecimento.start();
   });
+}
+
+export function pararOuvir() {
+  console.log("clicou em para")
+  reconhecimentoAtual?.stop()
 }
 
  export async function falar(text: string, lang: string = "pt-BR"): Promise<void> {

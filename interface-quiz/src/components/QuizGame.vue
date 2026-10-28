@@ -4,7 +4,7 @@
     import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz, mudarVolumeMusica } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse, Configuracoes} from '../types/QuizTypes'
-    import { ouvindoUsuario, falar } from '../service/speechRecognitionService';
+    import { ouvindoUsuario, falar, pararOuvir } from '../service/speechRecognitionService';
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
     //Resposta = { enunciado: string, resposta: string }
@@ -119,7 +119,8 @@ async function enviarResposta(tentativa = 1) {
 
 async function enviarRespostaAudio() {
 
-    if (ouvindo.value || enviando.value || respondida.value) return
+    if (enviando.value || respondida.value) return
+    if (ouvindo.value) {pararOuvir(); return}
     
     window.speechSynthesis.cancel()
     ouvindo.value = true
@@ -248,11 +249,20 @@ function mudarMusica() {
 
             </div>
             <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
+
             <div v-if="!respondida" class="actions">
+
+                <!--#############################################BOTAO DE ENVIAR RESPOSTA-->
                 <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+
+                <!--#############################################BOTAO DE FALAR-->
                 <div v-if="configuracoes.botao_fala">
-                    <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
+                    <button class="btn" :disabled="respondida" @click="enviarRespostaAudio">
+                        {{ ouvindo ? 'parar' : 'microfone' }}
+                    </button>
                 </div>
+
+                <!--#############################################BOTAO DE LER TEXTO-->
                 <div v-if="configuracoes.botao_voz">
                     <button class="btn" @click="lerTexto">ler texto</button>
                 </div>
