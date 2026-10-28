@@ -4,7 +4,7 @@
     import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse, Configuracoes} from '../types/QuizTypes'
-    import { ouvindoUsuario, falar } from '../service/speechRecognitionService';
+    import { ouvindoUsuario, falar, pararOuvir } from '../service/speechRecognitionService';
     //Pergunta = { enunciado: string, alternativas: string[] }
     //RespostaRequest = { uuid: string, respostas: Resposta[] }
     //Resposta = { enunciado: string, resposta: string }
@@ -14,7 +14,7 @@ const props = defineProps < {
     perguntas: Pergunta[] 
     uuid: string
     dificuldade: string
-    configuracoes: Pick<Configuracoes, 'botao_voz' | 'botao_fala'>
+    configuracoes: Pick<Configuracoes, 'botao_voz' | 'botao_fala' | 'botao_musica'>
     } > ()
 
 const emit = defineEmits< { (e: 'voltarMenu', usuario: Usuario): void } > ()
@@ -37,15 +37,49 @@ const nomeValido = computed(() =>
     /\p{L}/u.test(nomeUsuario.value)
 )
 const ouvindo = ref(false)
+const lendo = ref(false)
+let controleAudio = 0
+
+async function retomarMusica() {
+    if (!props.configuracoes.botao_musica) return
+
+    try {
+        await despausarMusica()
+    } catch (e) {
+        console.error(e)
+        erro.value = 'Não foi possível reproduzir a música. Verifique o áudio do navegador.'
+    }
+}
 
 async function lerTexto() {
+    if (ouvindo.value || enviando.value || respondida.value) return
+
+    if (lendo.value) {
+        controleAudio++
+        lendo.value = false
+        window.speechSynthesis.cancel()
+        await retomarMusica()
+        return
+    }
+
+    const leituraAtual = ++controleAudio
+    lendo.value = true
+    pausarMusica()
+    window.speechSynthesis.cancel()
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
     try{
-        falar(textoFalar)
+        await falar(textoFalar)
+        
     }
     catch(e) {
+        if (leituraAtual !== controleAudio) return
         console.error(e)
         erro.value='Houve um erro ao ler o texto, tente novamente'
+    } finally {
+        if (leituraAtual === controleAudio) {
+            lendo.value = false
+            await retomarMusica()
+        }
     }
 }
 
@@ -55,66 +89,69 @@ async function lerExplicacao() {
         const textoAcerto = respostaResponse.value.correta ? "Você acertou!" : "Você errou!"
         const textoFalar = `${textoAcerto} Explicação: ${respostaResponse.value?.explicacao}`
         await falar(textoFalar)
-        despausarMusica()
     }
     catch(e) {
         console.error(e)
-        erro.value='Houve um erro ao ler a explicação, tente novamente'
+    } finally {
+        await retomarMusica()
     }
     
 }
-async function enviarResposta(tentativa = 1) {
+async function enviarResposta() {
     
     if (enviando.value || respondida.value || !alternativaSelecionada.value) return
 
-    if(window.speechSynthesis.speaking) {window.speechSynthesis.cancel()}
+    if (lendo.value) {
+        controleAudio++
+        lendo.value = false
+        window.speechSynthesis.cancel()
+        await retomarMusica()
+    } else if(window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel()
+    }
 
     enviando.value = true
     erro.value = ''
     respostaResponse.value = null
+    const respostaSelecionada = alternativaSelecionada.value
 
     const respostaRequest: RespostaRequest = ({
         uuid: props.uuid, 
         'enunciado': perguntaAtual.value.enunciado, 
-        'resposta_usuario': alternativaSelecionada.value!
+        'resposta_usuario': respostaSelecionada
     })
 
-    let tentarDeNovo = false
-
     try {
-        respostaResponse.value = await responderQuiz(respostaRequest)
-        if(respostaResponse.value.correta) {
-            efeitoAcertar()
-            acertos.value++
+        for (let tentativa = 1; tentativa <= 5; tentativa++) {
+            try {
+                respostaResponse.value = await responderQuiz(respostaRequest)
+                if(respostaResponse.value.correta) {
+                    efeitoAcertar()
+                    acertos.value++
+                }
+                else{efeitoErrar()}
+                return
+            } catch(e) {
+                console.error(e)
+                if(tentativa === 5) {
+                    erro.value='Houve um erro ao enviar a resposta, tente novamente'
+                    return
+                }
+                await new Promise(resolve => setTimeout(resolve, 500 * tentativa))
+            }
         }
-        else{efeitoErrar()}
-    }
-    catch(e) {
-
-        console.error(e)
-        if(tentativa >= 5) {erro.value='Houve um erro ao enviar a resposta, tente novamente'}
-        else if(tentativa <5) {tentarDeNovo = true}
-
-        }
-
-    finally{
-
+    } finally {
         enviando.value = false
-
     }
-
-    if(tentarDeNovo) {
-        await new Promise(r => setTimeout(r, 500 * tentativa))
-        await enviarResposta(tentativa + 1)
-    }
-    
-    
 }
 
 async function enviarRespostaAudio() {
 
-    if (ouvindo.value || enviando.value || respondida.value) return
+    if (enviando.value || respondida.value) return
+    if (ouvindo.value) {pararOuvir(); return}
     
+    controleAudio++
+    lendo.value = false
     window.speechSynthesis.cancel()
     ouvindo.value = true
     erro.value=''
@@ -122,13 +159,24 @@ async function enviarRespostaAudio() {
 
     try {
         pausarMusica()
-        alternativaSelecionada.value = await ouvindoUsuario()
-        if(alternativaSelecionada.value) {console.log(alternativaSelecionada.value)}
+        const respostaFalada = await ouvindoUsuario()
+        if (!respostaFalada.trim()) {
+            erro.value = 'Não ouvi uma resposta. Tente novamente.'
+            await retomarMusica()
+            return
+        }
+        alternativaSelecionada.value = respostaFalada
 
     } catch (e) {
         console.error(e)
         erro.value='Houve um erro ao ouvir a resposta, tente novamente'
-        falar('Houve um erro ao ouvir a resposta, tente novamente')
+        try {
+            await falar('Houve um erro ao ouvir a resposta, tente novamente')
+        } catch (erroFala) {
+            console.error(erroFala)
+        } finally {
+            await retomarMusica()
+        }
         return
 
     } finally {
@@ -136,11 +184,17 @@ async function enviarRespostaAudio() {
     }
 
     await enviarResposta()
-    await lerExplicacao()
+    if (respostaResponse.value) {
+        await lerExplicacao()
+    } else {
+        await retomarMusica()
+    }
     
 }
 
 function proximaQuestao() {
+
+    if(window.speechSynthesis.speaking) {window.speechSynthesis.cancel()}
     
     if(indice.value < props.perguntas.length - 1) {
         indice.value++
@@ -201,7 +255,7 @@ function filtrarNome(event: Event) {
                     name="alternativa"
                     :value="alternativa"
                     v-model="alternativaSelecionada"
-                    :disabled="respondida"
+                    :disabled="respondida || enviando || ouvindo"
                     />
 
                     <span
@@ -221,13 +275,24 @@ function filtrarNome(event: Event) {
 
             </div>
             <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
+
             <div v-if="!respondida" class="actions">
-                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+
+                <!--#############################################BOTAO DE ENVIAR RESPOSTA-->
+                <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida || enviando" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
+
+                <!--#############################################BOTAO DE FALAR-->
                 <div v-if="configuracoes.botao_fala">
-                    <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
+                    <button class="btn" :disabled="respondida" @click="enviarRespostaAudio">
+                        {{ ouvindo ? 'parar' : 'microfone' }}
+                    </button>
                 </div>
+
+                <!--#############################################BOTAO DE LER TEXTO-->
                 <div v-if="configuracoes.botao_voz">
-                    <button class="btn" @click="lerTexto">ler texto</button>
+                    <button class="btn" :disabled="ouvindo || enviando || respondida" @click="lerTexto">
+                        {{ lendo ? 'parar leitura' : 'ler texto' }}
+                    </button>
                 </div>
                 
                 <p v-if="erro" class="error-msg" role="alert">{{ erro }}</p>

@@ -10,27 +10,109 @@ async function garantirPermissaoMicrofone(): Promise<void> {
   }
 }
 
+interface SessaoReconhecimento {
+  reconhecimento: SpeechRecognition | null
+  cancelada: boolean
+  finalizada: boolean
+  resolver: (texto: string) => void
+  rejeitar: (erro: Error) => void
+}
+
+let sessaoAtual: SessaoReconhecimento | null = null
 
 export async function ouvindoUsuario(lang: string = "pt-BR"): Promise<string> {
-  await garantirPermissaoMicrofone();
+  return new Promise((resolver, rejeitar) => {
+    const sessao: SessaoReconhecimento = {
+      reconhecimento: null,
+      cancelada: false,
+      finalizada: false,
+      resolver,
+      rejeitar,
+    }
+    sessaoAtual = sessao
+    void iniciarReconhecimento(sessao, lang)
+  })
+}
 
-  return new Promise((resolve, reject) => {
+function finalizarSessao(
+  sessao: SessaoReconhecimento,
+  texto?: string,
+  erro?: Error,
+) {
+  if (sessao.finalizada) return
+
+  sessao.finalizada = true
+  if (sessaoAtual === sessao) sessaoAtual = null
+
+  if (erro) sessao.rejeitar(erro)
+  else sessao.resolver(texto ?? "")
+}
+
+async function iniciarReconhecimento(
+  sessao: SessaoReconhecimento,
+  lang: string,
+) {
+  try {
+    await garantirPermissaoMicrofone()
+    if (sessao.cancelada) {
+      finalizarSessao(sessao)
+      return
+    }
+
     const Reconhecimento = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-
     if (!Reconhecimento) {
-      reject(new Error("Seu navegador não suporta reconhecimento de voz."));
+      throw new Error("Seu navegador não suporta reconhecimento de voz.")
+    }
+
+    const reconhecimento = new Reconhecimento()
+    sessao.reconhecimento = reconhecimento
+    reconhecimento.lang = lang
+    reconhecimento.interimResults = false
+    let texto = ""
+
+    reconhecimento.onresult = (event) => {
+      texto = event.results[0][0].transcript
+    }
+    reconhecimento.onerror = (event) => {
+      if (!sessao.cancelada) {
+        finalizarSessao(sessao, undefined, new Error(event.error))
+      }
+    }
+    reconhecimento.onend = () => {
+      finalizarSessao(sessao, sessao.cancelada ? "" : texto)
+    }
+
+    if (sessao.cancelada) {
+      finalizarSessao(sessao)
       return;
     }
 
-    const reconhecimento = new Reconhecimento();
-    reconhecimento.lang = lang;
-    reconhecimento.interimResults = false;
+    reconhecimento.start()
+  } catch (erro) {
+    finalizarSessao(
+      sessao,
+      undefined,
+      erro instanceof Error ? erro : new Error(String(erro)),
+    )
+  }
+}
 
-    reconhecimento.onresult = (event) => resolve(event.results[0][0].transcript);
-    reconhecimento.onerror = (event) => reject(new Error(event.error));
+export function pararOuvir() {
+  const sessao = sessaoAtual
+  if (!sessao) return
 
-    reconhecimento.start();
-  });
+  sessao.cancelada = true
+  if (!sessao.reconhecimento) {
+    finalizarSessao(sessao)
+    return
+  }
+
+  try {
+    sessao.reconhecimento.stop()
+  } catch (erro) {
+    console.error("Não foi possível parar o reconhecimento de voz.", erro)
+    finalizarSessao(sessao)
+  }
 }
 
  export async function falar(text: string, lang: string = "pt-BR"): Promise<void> {
