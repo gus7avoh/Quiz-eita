@@ -2,17 +2,17 @@ from pydantic import BaseModel, Field
 
 
 class RankingEntryRequest(BaseModel):
-    player_name: str = Field(min_length=1)
-    quiz_uuid: str = Field(min_length=1)
-    score: int = Field(ge=0)
-    difficulty: str = Field(min_length=1)
+    """Payload enviado pelo frontend quando a partida termina."""
+
+    nome: str = Field(min_length=1)
+    pontos: int = Field(ge=0)
+    dificuldade: str = Field(min_length=1)
 
 
 class RankingEntry(BaseModel):
-    player_name: str
-    quiz_uuid: str
-    score: int
-    difficulty: str
+    nome: str
+    pontos: int
+    dificuldade: str
 
 
 class RankingResponse(BaseModel):
@@ -20,7 +20,7 @@ class RankingResponse(BaseModel):
 
 
 class RankingCreatedResponse(BaseModel):
-    created: bool
+    added: bool
 
 
 class RankingDeleteResponse(BaseModel):

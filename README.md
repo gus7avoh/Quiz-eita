@@ -228,11 +228,11 @@ O frontend fica em `interface-quiz/` e é uma aplicação Vue 3 escrita em TypeS
 
 ### O que acontece no frontend
 
-- Ao clicar em **Criar quiz**, `SelectGame.vue` envia nome do jogador, tema, dificuldade e a quantidade `5` para `POST /quiz/create`. O servidor cria imediatamente o registro do jogador no ranking daquela dificuldade.
+- Ao clicar em **Criar quiz**, `SelectGame.vue` envia tema, dificuldade e a quantidade `5` para `POST /quiz/create`. O nome ainda não existe nessa etapa.
 - O servidor devolve um UUID. A tela consulta `POST /quiz/question` a cada dois segundos, por no máximo vinte tentativas.
 - Quando as perguntas chegam, `QuizGame.vue` guarda a alternativa marcada para cada pergunta. A navegação permite voltar e corrigir uma escolha antes do envio.
-- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta. Cada resposta correta soma um ponto ao quiz e atualiza a pontuação do mesmo registro no ranking.
-- Ao voltar ao menu, a interface chama `DELETE /quiz` para apagar o quiz que estava aberto e limpa o estado local.
+- Ao finalizar, `QuizService.ts` chama `POST /quiz/answer` uma vez para cada pergunta. Cada resposta correta soma um ponto no estado temporário do quiz.
+- Depois que o jogador informa o nome, a interface chama `POST /ranking` com `nome`, `pontos` e `dificuldade`. Só então chama `DELETE /quiz` para apagar o quiz que estava aberto e limpa o estado local.
 
 Essa separação ajuda a localizar mudanças: aparência e fluxo de tela ficam em `src/components`, formato dos dados fica em `src/types` e integração com o servidor fica em `src/service`.
 
@@ -327,7 +327,6 @@ Request:
 
 ```json
 {
-  "player_name": "Ana",
   "tema": "python",
   "quantidade": 5,
   "dificuldade": "mista"
@@ -340,7 +339,25 @@ Resposta:
 { "uuid": "codigo-gerado" }
 ```
 
-`player_name`, `tema` e `dificuldade` devem ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
+`tema` e `dificuldade` devem ser textos não vazios. `quantidade` deve ser maior que zero. Requests inválidos retornam `422`.
+
+### `POST /ranking`
+
+Registra o resultado depois que o jogador termina a partida:
+
+```json
+{
+  "nome": "Ana",
+  "pontos": 4,
+  "dificuldade": "Fácil"
+}
+```
+
+O nome não participa da criação do quiz. O ranking é persistido por dificuldade e a resposta indica se o registro foi adicionado:
+
+```json
+{ "added": true }
+```
 
 ### `POST /quiz/question`
 

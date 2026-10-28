@@ -34,7 +34,7 @@ async def add_ranking_entry(
     except LookupError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
-    return RankingCreatedResponse(created=True)
+    return RankingCreatedResponse(added=True)
 
 
 @router.delete("/{difficulty}", response_model=RankingDeleteResponse)
