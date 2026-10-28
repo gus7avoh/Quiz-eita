@@ -1,4 +1,5 @@
 import type { CriarQuizRequest, BuscarQuizResponse, RespostaRequest, DeletarRequest, Ranking, RespostaResponse, Usuario } from '../types/QuizTypes'
+import { usarMusicaFundo, usarEfeitoAudio } from '../composables/useBackgroundMusics';
 
 // In production the API and the compiled frontend are served by the same
 // origin. A separate URL is only needed when the API is hosted elsewhere.
@@ -122,4 +123,32 @@ export async function adicionarUsuario(nome: string, pontos: number, dificuldade
     const data = await response.json()
     
     return data.added
+}
+
+const { iniciar, pausar, continuar, mudarVolume } = usarMusicaFundo()
+export function comecarMusica(dificuldade: string) {
+    iniciar(dificuldade)
+}
+
+export function pausarMusica() {
+    pausar()
+}
+
+export function despausarMusica() {
+    continuar()
+}
+
+export function mudarVolumeMusica(volume: number) {
+    mudarVolume(volume)
+}
+
+
+const {usarEfeito} = usarEfeitoAudio()
+
+export function efeitoAcertar() {
+    usarEfeito(true)
+}
+
+export function efeitoErrar() {
+    usarEfeito(false)
 }
