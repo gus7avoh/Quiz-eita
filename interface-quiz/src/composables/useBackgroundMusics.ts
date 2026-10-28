@@ -10,7 +10,7 @@ const efeito = new Audio()
 efeito.loop = false
 efeito.volume=1
 export function usarMusicaFundo() {
-    function iniciar(musica: string) {
+    async function iniciar(musica: string): Promise<void> {
         switch(musica) {
 
             case'Fácil':
@@ -32,8 +32,12 @@ export function usarMusicaFundo() {
             case 'Misto':
                 audio.src = '/musicas/musicaMisto.mp3'
             break
+
+            default:
+                throw new Error(`Dificuldade de música desconhecida: ${musica}`)
         }
-        audio.play().then(() => (tocando.value = true))
+        await audio.play()
+        tocando.value = true
     }    
 
     function pausar() {
@@ -43,8 +47,9 @@ export function usarMusicaFundo() {
     function mudarVolume(volumeAudio: number) {
         audio.volume=volumeAudio
     }
-    function continuar() {
-        audio.play()
+    async function continuar(): Promise<void> {
+        await audio.play()
+        tocando.value = true
     }
     return { iniciar, pausar, continuar, mudarVolume }
 }
@@ -56,4 +61,3 @@ export function usarEfeitoAudio() {
     }
     return { usarEfeito }
 }
-

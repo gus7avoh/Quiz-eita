@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
-  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario, comecarMusica, mudarVolumeMusica } from '../service/QuizService'
+  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario, comecarMusica, despausarMusica, mudarVolumeMusica } from '../service/QuizService'
   import type { BuscarQuizResponse, Configuracoes, DeletarRequest, Usuario } from '../types/QuizTypes'
   import QuizGame from './QuizGame.vue'
   import ConfiguracoesJogo from './ConfiguracoesJogo.vue'
@@ -16,6 +16,7 @@
   const quiz = ref<BuscarQuizResponse | null> (null)
   const carregando = ref(false)
   const erro = ref('')
+  const erroAudio = ref('')
   const configuracoes = ref<Configuracoes>({
     botao_acessibilidade: false,
     botao_fala: false,
@@ -50,6 +51,7 @@
 
     carregando.value = true
     erro.value=''
+    erroAudio.value = ''
 
     try {
 
@@ -57,9 +59,14 @@
       const id = await criarQuiz({tema: temaSelecionado, quantidade: 5, dificuldade: dificuldade.value})
       uuid.value=id
       await esperarResposta(id)
-      if (configuracoes.value.botao_musica) {
-        comecarMusica(dificuldade.value)
+      if (quiz.value && configuracoes.value.botao_musica) {
         mudarVolumeMusica(volumeMusica.value)
+        try {
+          await comecarMusica(dificuldade.value)
+        } catch (e) {
+          console.error('Não foi possível iniciar a música', e)
+          erroAudio.value = 'Não foi possível reproduzir a música. Verifique o áudio do navegador.'
+        }
       }
       if (quiz.value) emit('quiz-ativo', true)
 
@@ -88,6 +95,7 @@
     if (configuracoes.value.botao_musica) {
       configuracoes.value.botao_musica = false
       mudarVolumeMusica(0)
+      erroAudio.value = ''
       return
     }
 
@@ -95,20 +103,34 @@
     configuracoes.value.botao_musica = true
     volumeMusica.value = volumeRestaurado
     mudarVolumeMusica(volumeRestaurado)
+    if (quiz.value) void tentarRetomarMusica()
+  }
+
+  async function tentarRetomarMusica() {
+    try {
+      await despausarMusica()
+      erroAudio.value = ''
+    } catch (e) {
+      console.error('Não foi possível reproduzir a música', e)
+      erroAudio.value = 'Não foi possível reproduzir a música. Verifique o áudio do navegador.'
+    }
   }
 
   function alterarVolumeMusica(volume: number) {
     const volumeLimitado = Math.max(0, Math.min(1, volume))
+    const volumeAnterior = volumeMusica.value
     volumeMusica.value = volumeLimitado
     mudarVolumeMusica(volumeLimitado)
 
     if (volumeLimitado === 0) {
       configuracoes.value.botao_musica = false
+      erroAudio.value = ''
       return
     }
 
     ultimoVolumeMusica.value = volumeLimitado
     configuracoes.value.botao_musica = true
+    if (volumeAnterior === 0 && quiz.value) void tentarRetomarMusica()
   }
 
     //função de pegar respostas que chama buscarQuiz do QuizService
@@ -180,6 +202,7 @@
     @alternar-fala="alternarFala"
     @volume-change="alterarVolumeMusica"
   />
+  <p v-if="erroAudio" class="error-msg" role="alert">{{ erroAudio }}</p>
 
   <div id="janela">
 

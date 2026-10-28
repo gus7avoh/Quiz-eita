@@ -14,7 +14,7 @@ const props = defineProps < {
     perguntas: Pergunta[] 
     uuid: string
     dificuldade: string
-    configuracoes: Pick<Configuracoes, 'botao_voz' | 'botao_fala'>
+    configuracoes: Pick<Configuracoes, 'botao_voz' | 'botao_fala' | 'botao_musica'>
     } > ()
 
 const emit = defineEmits< { (e: 'voltarMenu', usuario: Usuario): void } > ()
@@ -39,6 +39,17 @@ const nomeValido = computed(() =>
 const ouvindo = ref(false)
 let controleAudio = 0
 
+async function retomarMusica() {
+    if (!props.configuracoes.botao_musica) return
+
+    try {
+        await despausarMusica()
+    } catch (e) {
+        console.error(e)
+        erro.value = 'Não foi possível reproduzir a música. Verifique o áudio do navegador.'
+    }
+}
+
 async function lerTexto() {
     if (ouvindo.value || enviando.value || respondida.value) return
 
@@ -54,7 +65,7 @@ async function lerTexto() {
         console.error(e)
         erro.value='Houve um erro ao ler o texto, tente novamente'
     } finally {
-        if (leituraAtual === controleAudio) despausarMusica()
+        if (leituraAtual === controleAudio) await retomarMusica()
     }
 }
 
@@ -68,7 +79,7 @@ async function lerExplicacao() {
     catch(e) {
         console.error(e)
     } finally {
-        despausarMusica()
+        await retomarMusica()
     }
     
 }
@@ -136,7 +147,7 @@ async function enviarRespostaAudio() {
         const respostaFalada = await ouvindoUsuario()
         if (!respostaFalada.trim()) {
             erro.value = 'Não ouvi uma resposta. Tente novamente.'
-            despausarMusica()
+            await retomarMusica()
             return
         }
         alternativaSelecionada.value = respostaFalada
@@ -149,7 +160,7 @@ async function enviarRespostaAudio() {
         } catch (erroFala) {
             console.error(erroFala)
         } finally {
-            despausarMusica()
+            await retomarMusica()
         }
         return
 
@@ -161,7 +172,7 @@ async function enviarRespostaAudio() {
     if (respostaResponse.value) {
         await lerExplicacao()
     } else {
-        despausarMusica()
+        await retomarMusica()
     }
     
 }

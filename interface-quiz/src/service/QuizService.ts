@@ -126,16 +126,16 @@ export async function adicionarUsuario(nome: string, pontos: number, dificuldade
 }
 
 const { iniciar, pausar, continuar, mudarVolume } = usarMusicaFundo()
-export function comecarMusica(dificuldade: string) {
-    iniciar(dificuldade)
+export function comecarMusica(dificuldade: string): Promise<void> {
+    return iniciar(dificuldade)
 }
 
 export function pausarMusica() {
     pausar()
 }
 
-export function despausarMusica() {
-    continuar()
+export function despausarMusica(): Promise<void> {
+    return continuar()
 }
 
 export function mudarVolumeMusica(volume: number) {
