@@ -231,7 +231,7 @@ function mudarMusica() {
                     name="alternativa"
                     :value="alternativa"
                     v-model="alternativaSelecionada"
-                    :disabled="respondida || enviando"
+                    :disabled="respondida || enviando || ouvindo"
                     />
 
                     <span
