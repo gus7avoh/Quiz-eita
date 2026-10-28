@@ -64,11 +64,11 @@ async function lerExplicacao() {
         const textoAcerto = respostaResponse.value.correta ? "Você acertou!" : "Você errou!"
         const textoFalar = `${textoAcerto} Explicação: ${respostaResponse.value?.explicacao}`
         await falar(textoFalar)
-        despausarMusica()
     }
     catch(e) {
         console.error(e)
-        
+    } finally {
+        despausarMusica()
     }
     
 }
@@ -158,7 +158,11 @@ async function enviarRespostaAudio() {
     }
 
     await enviarResposta()
-    await lerExplicacao()
+    if (respostaResponse.value) {
+        await lerExplicacao()
+    } else {
+        despausarMusica()
+    }
     
 }
 
