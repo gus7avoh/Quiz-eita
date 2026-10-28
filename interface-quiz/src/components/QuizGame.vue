@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 
     import { ref, computed } from 'vue'
-    import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz, mudarVolumeMusica } from '../service/QuizService';
+    import { despausarMusica, efeitoAcertar, efeitoErrar, pausarMusica, responderQuiz } from '../service/QuizService';
     import { EnumQuizGame } from '../types/QuizTypes'
     import type { Pergunta, RespostaRequest, Usuario,  EstadoQuiz, RespostaResponse, Configuracoes} from '../types/QuizTypes'
     import { ouvindoUsuario, falar, pararOuvir } from '../service/speechRecognitionService';
@@ -14,6 +14,7 @@ const props = defineProps < {
     perguntas: Pergunta[] 
     uuid: string
     dificuldade: string
+    configuracoes: Pick<Configuracoes, 'botao_voz' | 'botao_fala'>
     } > ()
 
 const emit = defineEmits< { (e: 'voltarMenu', usuario: Usuario): void } > ()
@@ -36,13 +37,6 @@ const nomeValido = computed(() =>
     /\p{L}/u.test(nomeUsuario.value)
 )
 const ouvindo = ref(false)
-
-const configuracoes = ref<Configuracoes> ({
-    botao_acessibilidade: false,
-    botao_fala: false,
-    botao_voz: false,
-    botao_musica: true
-})
 
 async function lerTexto() {
     const textoFalar = `Pergunta: ${perguntaAtual.value.enunciado}. Alternativas: ${perguntaAtual.value.alternativas.join(', ')}.`
@@ -177,30 +171,9 @@ function filtrarNome(event: Event) {
     input.value = nomeFiltrado
 }
 
-function mudarFala() {
-    if(configuracoes.value.botao_fala) {configuracoes.value.botao_fala=false}
-    else{configuracoes.value.botao_fala=true}
-}
-function mudarVoz() {
-    configuracoes.value.botao_voz ? configuracoes.value.botao_voz = false : configuracoes.value.botao_voz = true
-}
-function mudarMusica() {
-    if (configuracoes.value.botao_musica) {
-        configuracoes.value.botao_musica = false
-        mudarVolumeMusica(0)
-    }
-    
-    else {
-        configuracoes.value.botao_musica = true
-        mudarVolumeMusica(1)
-    }
-}
 </script>
 
 <template>
-    <button @click="mudarMusica">Música</button>
-    <button @click="mudarVoz">Acessibilidade voz</button>
-    <button @click="mudarFala">acessibilidade fala</button>
     <div v-if="estadoQuiz === 'RESPONDENDO'" class="quiz">
 
         <div class="progress">

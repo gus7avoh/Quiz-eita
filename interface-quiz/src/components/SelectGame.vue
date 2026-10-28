@@ -1,8 +1,9 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
-  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario, comecarMusica } from '../service/QuizService'
-  import type { BuscarQuizResponse, DeletarRequest, Usuario } from '../types/QuizTypes'
+  import { criarQuiz, buscarQuiz, deletarQuiz, adicionarUsuario, comecarMusica, mudarVolumeMusica } from '../service/QuizService'
+  import type { BuscarQuizResponse, Configuracoes, DeletarRequest, Usuario } from '../types/QuizTypes'
   import QuizGame from './QuizGame.vue'
+  import ConfiguracoesJogo from './ConfiguracoesJogo.vue'
 
   const emit = defineEmits<{
     (event: 'quiz-ativo', ativo: boolean): void
@@ -15,6 +16,14 @@
   const quiz = ref<BuscarQuizResponse | null> (null)
   const carregando = ref(false)
   const erro = ref('')
+  const configuracoes = ref<Configuracoes>({
+    botao_acessibilidade: false,
+    botao_fala: false,
+    botao_voz: false,
+    botao_musica: true,
+  })
+  const volumeMusica = ref(1)
+  const ultimoVolumeMusica = ref(1)
   const temasPredefinidos = [
     'c#',
     'famosos',
@@ -48,7 +57,10 @@
       const id = await criarQuiz({tema: temaSelecionado, quantidade: 5, dificuldade: dificuldade.value})
       uuid.value=id
       await esperarResposta(id)
-      comecarMusica(dificuldade.value)
+      if (configuracoes.value.botao_musica) {
+        comecarMusica(dificuldade.value)
+        mudarVolumeMusica(volumeMusica.value)
+      }
       if (quiz.value) emit('quiz-ativo', true)
 
     }
@@ -62,6 +74,41 @@
       carregando.value = false
     }
 
+  }
+
+  function alternarFala() {
+    configuracoes.value.botao_fala = !configuracoes.value.botao_fala
+  }
+
+  function alternarVoz() {
+    configuracoes.value.botao_voz = !configuracoes.value.botao_voz
+  }
+
+  function alternarMusica() {
+    if (configuracoes.value.botao_musica) {
+      configuracoes.value.botao_musica = false
+      mudarVolumeMusica(0)
+      return
+    }
+
+    const volumeRestaurado = ultimoVolumeMusica.value > 0 ? ultimoVolumeMusica.value : 1
+    configuracoes.value.botao_musica = true
+    volumeMusica.value = volumeRestaurado
+    mudarVolumeMusica(volumeRestaurado)
+  }
+
+  function alterarVolumeMusica(volume: number) {
+    const volumeLimitado = Math.max(0, Math.min(1, volume))
+    volumeMusica.value = volumeLimitado
+    mudarVolumeMusica(volumeLimitado)
+
+    if (volumeLimitado === 0) {
+      configuracoes.value.botao_musica = false
+      return
+    }
+
+    ultimoVolumeMusica.value = volumeLimitado
+    configuracoes.value.botao_musica = true
   }
 
     //função de pegar respostas que chama buscarQuiz do QuizService
@@ -123,6 +170,17 @@
 </script>
 
 <template>
+  <ConfiguracoesJogo
+    :musica-ativa="configuracoes.botao_musica"
+    :voz-ativa="configuracoes.botao_voz"
+    :fala-ativa="configuracoes.botao_fala"
+    :volume-musica="volumeMusica"
+    @alternar-musica="alternarMusica"
+    @alternar-voz="alternarVoz"
+    @alternar-fala="alternarFala"
+    @volume-change="alterarVolumeMusica"
+  />
+
   <div id="janela">
 
     <header class="sr-only">
@@ -205,6 +263,7 @@
         :perguntas="quiz.perguntas"
         :uuid='uuid'
         :dificuldade="dificuldade"
+        :configuracoes="configuracoes"
         @voltar-menu= "voltarMenu"
       />
 
