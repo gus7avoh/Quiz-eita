@@ -134,6 +134,19 @@ html body #app {
     text-align: left;
 }
 
+/* Em telas pequenas, o conteúdo do jogo define a altura da página e a
+   rolagem fica no documento, em vez de ficar presa em um painel interno. */
+@media (max-width: 48rem) {
+    html,
+    html body,
+    html body #app {
+        height: auto !important;
+        min-height: 100%;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+}
+
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--cobalt) transparent;
@@ -280,8 +293,6 @@ html body #app {
 
 <style scoped>
 .janela {
-    height: 100dvh;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: clamp(16px, 2.2vw, 28px);
@@ -398,11 +409,13 @@ html body #app {
 @media (max-width: 48rem) {
     .janela {
         padding-bottom: calc(76px + env(safe-area-inset-bottom));
+        overflow: visible;
     }
 
     .content_wrapper {
-        grid-template-rows: minmax(0, 1fr);
-        overflow: hidden;
+        display: block;
+        flex: none;
+        overflow: visible;
     }
 
     .content_wrapper aside {
@@ -432,6 +445,13 @@ html body #app {
     .content_wrapper main {
         grid-column: 1;
         grid-row: 1;
+        display: block;
+        min-height: auto;
+    }
+
+    .content_wrapper main :deep(#janela) {
+        min-height: auto;
+        overflow: visible;
     }
 
     .mobile-bottom-nav {

@@ -248,7 +248,7 @@ function mudarMusica() {
 
             </div>
             <!--############################## BOTÕES DE ENVIAR RESPOSTA ##################-->
-            <div class="actions">
+            <div v-if="!respondida" class="actions">
                 <button class="btn" :disabled="!alternativaSelecionada || ouvindo || respondida" @click="enviarResposta()">{{ enviando ? 'Enviando...' : 'Responder' }}</button>
                 <div v-if="configuracoes.botao_fala">
                     <button class="btn" :disabled="ouvindo || respondida" @click="enviarRespostaAudio">microfone</button>
