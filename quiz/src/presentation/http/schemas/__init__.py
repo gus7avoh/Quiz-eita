@@ -10,6 +10,13 @@ from .questions import (
     QuizQuestionsRequest,
     QuizQuestionsResponse,
 )
+from .ranking import (
+    RankingCreatedResponse,
+    RankingDeleteResponse,
+    RankingEntry,
+    RankingEntryRequest,
+    RankingResponse,
+)
 
 __all__ = [
     "QuizAnswer",
@@ -23,4 +30,9 @@ __all__ = [
     "QuizQuestionsRequest",
     "QuizQuestionsResponse",
     "QuizRequest",
+    "RankingCreatedResponse",
+    "RankingDeleteResponse",
+    "RankingEntry",
+    "RankingEntryRequest",
+    "RankingResponse",
 ]

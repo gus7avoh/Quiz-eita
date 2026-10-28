@@ -1,28 +1,49 @@
-from presentation.http.utils.uuid import generate_quiz_uuid
-from presentation.http.dto.quiz_dto import QuizDTO
-from infra.repository.quiz_repository import QuizRepository
-from infra.repository.redis_client import RedisClient
-from app.graph.graph import graph
-from domain.entities.quiz import Quiz
-from domain.entities.InterpretAnswer import AnswerToInterpret
-from presentation.http.services.interpret_answer import interpret_answer
-from fastapi import HTTPException
 import asyncio
 import logging
 
+from app.graph.graph import graph
+from domain.entities.InterpretAnswer import AnswerToInterpret
+from domain.entities.quiz import Quiz
+from fastapi import HTTPException
+from infra.repository.quiz_repository import QuizRepository
+from infra.repository.ranking_repository import RankingRepository
+from infra.repository.redis_client import RedisClient
+from presentation.http.dto.quiz_dto import QuizDTO
+from presentation.http.services.interpret_answer import interpret_answer
+from presentation.http.utils.uuid import generate_quiz_uuid
 
 logger = logging.getLogger(__name__)
 
 redis_client = RedisClient("REDIS_URL")
 repository = QuizRepository(redis_client)
+ranking_repository = RankingRepository(redis_client)
 
 
-async def create_quiz(tema: str, quantidade: int, dificuldade: str):
+async def create_quiz(
+    tema: str,
+    quantidade: int,
+    dificuldade: str,
+    player_name: str,
+):
     uuid = generate_quiz_uuid()
     try:
-        logger.info("Criando quiz uuid=%s tema=%r quantidade=%s dificuldade=%r", uuid, tema, quantidade, dificuldade)
-        await repository.create(uuid)
-        
+        logger.info(
+            "Criando quiz uuid=%s tema=%r quantidade=%s dificuldade=%r",
+            uuid,
+            tema,
+            quantidade,
+            dificuldade,
+        )
+        await repository.create(uuid, player_name, dificuldade)
+        await ranking_repository.add_ranking(
+            {
+                "player_name": player_name,
+                "quiz_uuid": uuid,
+                "score": 0,
+                "difficulty": dificuldade,
+            }
+        )
+
         asyncio.create_task(
             process_quiz(
                 uuid,
@@ -31,14 +52,14 @@ async def create_quiz(tema: str, quantidade: int, dificuldade: str):
                 dificuldade,
             )
         )
-    
+
         logger.info("Quiz aceito para processamento uuid=%s", uuid)
         return uuid
     except Exception:
         logger.exception("Falha ao criar quiz uuid=%s", uuid)
         raise
-    
-    
+
+
 async def process_quiz(
     uuid: str,
     tema: str,
@@ -58,24 +79,21 @@ async def process_quiz(
 
         quiz = Quiz(**result)
 
-        await repository.complete(
-            uuid,
-            quiz.model_dump()
-        )
+        await repository.complete(uuid, quiz.model_dump())
         logger.info("Quiz concluído uuid=%s", uuid)
 
     except Exception as e:
         logger.exception("Falha ao processar quiz uuid=%s", uuid)
         await repository.fail(uuid, str(e))
-    
+
 
 async def get_quiz(
-        quiz_uuid: str,
-    ):
+    quiz_uuid: str,
+):
     try:
-        if (await status_check(quiz_uuid) != "completed"):
+        if await status_check(quiz_uuid) != "completed":
             return None
-        
+
         logger.info("Coletando quiz uuid=%s", quiz_uuid)
         data = await repository.get_quiz(quiz_uuid)
 
@@ -100,15 +118,12 @@ async def delete_quiz(list_uuid: list[str]):
 
     return {"excluded": all(deleted)}
 
-async def answer_quiz(
-        quiz_uuid: str,
-        enunciado: str,
-        resposta: str
-    ):
-    try :
-        if (await status_check(quiz_uuid) != "completed"):
+
+async def answer_quiz(quiz_uuid: str, enunciado: str, resposta: str):
+    try:
+        if await status_check(quiz_uuid) != "completed":
             return None
-        
+
         logger.info("Coletando quiz uuid=%s", quiz_uuid)
         data = await repository.get_quiz(quiz_uuid)
 
@@ -117,18 +132,22 @@ async def answer_quiz(
 
         literal_answer = quiz_dto.get_answer(enunciado, resposta)
         if literal_answer is not None:
+            if literal_answer["resposta"]["correta"]:
+                await record_correct_answer(quiz_uuid, enunciado, data)
             return literal_answer
 
         question = quiz_dto.find_question(enunciado)
         if question is None:
             return None
 
-        interpreted = await interpret_answer([
-            AnswerToInterpret(
-                user_response=resposta,
-                alternatives=question.alternativas,
-            )
-        ])
+        interpreted = await interpret_answer(
+            [
+                AnswerToInterpret(
+                    user_response=resposta,
+                    alternatives=question.alternativas,
+                )
+            ]
+        )
         resolved_answer = interpreted.answers[0].referential_alternative
         if resolved_answer is None:
             logger.warning(
@@ -137,14 +156,30 @@ async def answer_quiz(
             )
             return None
 
-        return quiz_dto.get_answer(enunciado, resolved_answer)
+        answer = quiz_dto.get_answer(enunciado, resolved_answer)
+        if answer is not None and answer["resposta"]["correta"]:
+            await record_correct_answer(quiz_uuid, enunciado, data)
+        return answer
 
     except Exception:
         logger.exception("Falha ao processar quiz uuid=%s", quiz_uuid)
         raise
 
 
-async def status_check(quiz_uuid: str): 
+async def record_correct_answer(
+    quiz_uuid: str,
+    enunciado: str,
+    quiz_data: dict,
+) -> None:
+    score = await repository.record_correct_answer(quiz_uuid, enunciado)
+    await ranking_repository.update_score(
+        quiz_uuid=quiz_uuid,
+        difficulty=quiz_data["difficulty"],
+        score=score,
+    )
+
+
+async def status_check(quiz_uuid: str):
     logger.info("Checando status do quiz uuid=%s", quiz_uuid)
 
     data = await repository.get_quiz(quiz_uuid)

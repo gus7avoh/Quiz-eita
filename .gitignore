@@ -21,5 +21,8 @@ eita-rag-b1b0272909ff.json
 .DS_Store
 Thumbs.db
 
-# node
-node_modules/
+#NodeJS
+node_modules
+
+#Build
+dist

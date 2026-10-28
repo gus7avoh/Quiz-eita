@@ -5,7 +5,7 @@
   import QuizGame from './QuizGame.vue'
 
   const tema = ref('')
-  const temaPredefinido = ref('')
+  const playerName = ref('')
   const dificuldade = ref('')
   const uuid = ref('')
   const quiz = ref<BuscarQuizResponse | null> (null)
@@ -40,8 +40,12 @@
 
     try {
 
-      const temaSelecionado = temaPredefinido.value || tema.value.trim()
-      const id = await criarQuiz({tema: temaSelecionado, quantidade: 5, dificuldade: dificuldade.value})
+      const id = await criarQuiz({
+        tema: tema.value.trim(),
+        quantidade: 5,
+        dificuldade: dificuldade.value,
+        player_name: playerName.value.trim(),
+      })
       uuid.value=id
       await esperarResposta(id)
 
@@ -88,7 +92,7 @@
       quiz.value = null
       uuid.value = ''
       tema.value = ''
-      temaPredefinido.value = ''
+      playerName.value = ''
       dificuldade.value = ''
       return
     }
@@ -105,7 +109,7 @@
     quiz.value=null
     uuid.value=''
     tema.value=''
-    temaPredefinido.value = ''
+    playerName.value=''
     dificuldade.value=''
 
   }
@@ -125,65 +129,27 @@
 
     <main class="stage">
 
-      <div v-if = "!quiz" class="setup">
+      <div v-if = "!quiz">
+        
+        <input v-model="playerName" placeholder="Nome do jogador"/>
+        <input v-model="tema" placeholder="Tema do quiz"/>
 
-        <h2 class="setup-title">Monte seu quiz</h2>
+        <label for="dificuldade">Selecione uma dificuldade</label>        
+        <select v-model="dificuldade" id="dificuldade">
 
-        <div class="field">
-          <label for="tema">Tema do quiz</label>
-          <div class="theme-fields">
-            <input id="tema" class="text-input" v-model="tema" @input="digitarTema" placeholder="Ex.: Vue, redes, banco de dados"/>
+          <option disabled value="">Escolha...</option>
+          <option value="Fácil">Fácil</option>
+          <option value="Médio">Médio</option>
+          <option value="Difícil">Difícil</option>
+          <option value="Impossível">Impossível</option>
+          <option value="Misto">Misto</option>
 
-            <label for="tema-predefinido">Ou escolha um tema</label>
-            <select id="tema-predefinido" class="select-input" v-model="temaPredefinido" @change="selecionarTemaPredefinido">
-              <option value=""></option>
-              <option v-for="temaOpcao in temasPredefinidos" :key="temaOpcao" :value="temaOpcao">
-                {{ temaOpcao }}
-              </option>
-            </select>
-          </div>
-        </div>
+        </select>
+        
 
-        <fieldset class="field">
-
-          <legend>Selecione uma dificuldade</legend>
-
-          <div class="chips">
-
-            <label class="chip">
-              <input type="radio" name="dificuldade" value="Fácil" v-model="dificuldade"/>
-              <span class="chip-body"><span class="dot dot-facil"></span>Fácil</span>
-            </label>
-
-            <label class="chip">
-              <input type="radio" name="dificuldade" value="Médio" v-model="dificuldade"/>
-              <span class="chip-body"><span class="dot dot-medio"></span>Médio</span>
-            </label>
-
-            <label class="chip">
-              <input type="radio" name="dificuldade" value="Difícil" v-model="dificuldade"/>
-              <span class="chip-body"><span class="dot dot-dificil"></span>Difícil</span>
-            </label>
-
-            <label class="chip">
-              <input type="radio" name="dificuldade" value="Impossível" v-model="dificuldade"/>
-              <span class="chip-body"><span class="dot dot-impossivel"></span>Impossível</span>
-            </label>
-
-            <label class="chip">
-              <input type="radio" name="dificuldade" value="Misto" v-model="dificuldade"/>
-              <span class="chip-body"><span class="dot dot-misto"></span>Misto</span>
-            </label>
-
-          </div>
-
-        </fieldset>
-
-        <div class="actions">
-
-          <button class="btn" :class="{ loading: carregando }" :disabled="carregando || (!tema.trim() && !temaPredefinido) || !dificuldade" @click="gerarQuiz">
-            {{carregando ? 'Gerando...' : 'Criar quiz'}}
-          </button>
+        <button :disabled="carregando || !playerName.trim() || !tema.trim() || !dificuldade" @click="gerarQuiz">
+          {{carregando ? 'Gerando...' : 'Criar quiz'}}
+        </button>
 
           <p v-if="erro" class="error-msg" role="alert">
             {{ erro }}
